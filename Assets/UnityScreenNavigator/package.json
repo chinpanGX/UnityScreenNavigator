@@ -11,5 +11,5 @@
     "url": "https://github.com/Haruma-K"
   },
   "type": "tool",
-  "description": "Library for screen transitions, transition animations, transition history stacking, and lifecycle management in Unity's uGUI."
+  "description": "Library for screen transitions, transition animations, transition history stacking, and lifecycle management in Unity's uGUI. Includes a Presenter-driven DI layer (ChinpanGX/) built on VContainer."
 }
