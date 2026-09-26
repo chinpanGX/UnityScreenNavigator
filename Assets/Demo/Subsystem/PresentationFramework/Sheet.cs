@@ -1,4 +1,4 @@
-using System.Threading.Tasks;
+using Cysharp.Threading.Tasks;
 using UnityEngine.Assertions;
 using UnityScreenNavigator.Runtime.Core.Sheet;
 
@@ -21,7 +21,7 @@ namespace Demo.Subsystem.PresentationFramework
         }
 
 #if USN_USE_ASYNC_METHODS
-        public override async Task Initialize()
+        public override async UniTask Initialize()
         {
             Assert.IsNotNull(root);
 
@@ -49,7 +49,7 @@ namespace Demo.Subsystem.PresentationFramework
 #endif
 
 #if USN_USE_ASYNC_METHODS
-        public override async Task WillEnter()
+        public override async UniTask WillEnter()
         {
             Assert.IsNotNull(root);
 

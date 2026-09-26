@@ -1,8 +1,9 @@
-using Demo.Subsystem.PresentationFramework;
+using UnityScreenNavigator.Runtime.Core.Modal;
 
 namespace Demo.Core.Scripts.View.Confirmation
 {
-    public sealed class ConfirmationModal : Modal<ConfirmationView, ConfirmationViewState>
+    public sealed class ConfirmationModal : Modal
     {
+        public ConfirmationView root;
     }
 }

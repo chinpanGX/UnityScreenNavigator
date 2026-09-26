@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 #if USN_USE_ASYNC_METHODS
-using System.Threading.Tasks;
+using Cysharp.Threading.Tasks;
 using System.Linq;
 
 #else
@@ -13,10 +13,10 @@ namespace UnityScreenNavigator.Runtime.Core.Sheet
     public sealed class AnonymousSheetLifecycleEvent : ISheetLifecycleEvent
     {
 #if USN_USE_ASYNC_METHODS
-        public AnonymousSheetLifecycleEvent(Func<Task> initialize = null,
-            Func<Task> onWillEnter = null, Action onDidEnter = null,
-            Func<Task> onWillExit = null, Action onDidExit = null,
-            Func<Task> onCleanup = null)
+        public AnonymousSheetLifecycleEvent(Func<UniTask> initialize = null,
+            Func<UniTask> onWillEnter = null, Action onDidEnter = null,
+            Func<UniTask> onWillExit = null, Action onDidExit = null,
+            Func<UniTask> onCleanup = null)
 #else
         public AnonymousSheetLifecycleEvent(Func<IEnumerator> initialize = null,
             Func<IEnumerator> onWillEnter = null, Action onDidEnter = null,
@@ -42,10 +42,10 @@ namespace UnityScreenNavigator.Runtime.Core.Sheet
         }
 
 #if USN_USE_ASYNC_METHODS
-        public List<Func<Task>> OnInitialize { get; } = new List<Func<Task>>();
-        public List<Func<Task>> OnWillEnter { get; } = new List<Func<Task>>();
-        public List<Func<Task>> OnWillExit { get; } = new List<Func<Task>>();
-        public List<Func<Task>> OnCleanup { get; } = new List<Func<Task>>();
+        public List<Func<UniTask>> OnInitialize { get; } = new List<Func<UniTask>>();
+        public List<Func<UniTask>> OnWillEnter { get; } = new List<Func<UniTask>>();
+        public List<Func<UniTask>> OnWillExit { get; } = new List<Func<UniTask>>();
+        public List<Func<UniTask>> OnCleanup { get; } = new List<Func<UniTask>>();
 #else
         public List<Func<IEnumerator>> OnInitialize { get; } = new List<Func<IEnumerator>>();
         public List<Func<IEnumerator>> OnWillEnter { get; } = new List<Func<IEnumerator>>();
@@ -54,9 +54,9 @@ namespace UnityScreenNavigator.Runtime.Core.Sheet
 #endif
 
 #if USN_USE_ASYNC_METHODS
-        Task ISheetLifecycleEvent.Initialize()
+        UniTask ISheetLifecycleEvent.Initialize()
         {
-            return Task.WhenAll(OnInitialize.Select(x => x.Invoke()));
+            return UniTask.WhenAll(OnInitialize.Select(x => x.Invoke()));
         }
 #else
         IEnumerator ISheetLifecycleEvent.Initialize()
@@ -68,9 +68,9 @@ namespace UnityScreenNavigator.Runtime.Core.Sheet
 
 
 #if USN_USE_ASYNC_METHODS
-        Task ISheetLifecycleEvent.WillEnter()
+        UniTask ISheetLifecycleEvent.WillEnter()
         {
-            return Task.WhenAll(OnWillEnter.Select(x => x.Invoke()));
+            return UniTask.WhenAll(OnWillEnter.Select(x => x.Invoke()));
         }
 #else
         IEnumerator ISheetLifecycleEvent.WillEnter()
@@ -87,9 +87,9 @@ namespace UnityScreenNavigator.Runtime.Core.Sheet
 
 
 #if USN_USE_ASYNC_METHODS
-        Task ISheetLifecycleEvent.WillExit()
+        UniTask ISheetLifecycleEvent.WillExit()
         {
-            return Task.WhenAll(OnWillExit.Select(x => x.Invoke()));
+            return UniTask.WhenAll(OnWillExit.Select(x => x.Invoke()));
         }
 #else
         IEnumerator ISheetLifecycleEvent.WillExit()
@@ -106,9 +106,9 @@ namespace UnityScreenNavigator.Runtime.Core.Sheet
 
 
 #if USN_USE_ASYNC_METHODS
-        Task ISheetLifecycleEvent.Cleanup()
+        UniTask ISheetLifecycleEvent.Cleanup()
         {
-            return Task.WhenAll(OnCleanup.Select(x => x.Invoke()));
+            return UniTask.WhenAll(OnCleanup.Select(x => x.Invoke()));
         }
 #else
         IEnumerator ISheetLifecycleEvent.Cleanup()

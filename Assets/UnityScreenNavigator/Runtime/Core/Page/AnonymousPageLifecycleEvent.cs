@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 #if USN_USE_ASYNC_METHODS
-using System.Threading.Tasks;
+using Cysharp.Threading.Tasks;
 using System.Linq;
 
 #else
@@ -13,12 +13,12 @@ namespace UnityScreenNavigator.Runtime.Core.Page
     public sealed class AnonymousPageLifecycleEvent : IPageLifecycleEvent
     {
 #if USN_USE_ASYNC_METHODS
-        public AnonymousPageLifecycleEvent(Func<Task> initialize = null,
-            Func<Task> onWillPushEnter = null, Action onDidPushEnter = null,
-            Func<Task> onWillPushExit = null, Action onDidPushExit = null,
-            Func<Task> onWillPopEnter = null, Action onDidPopEnter = null,
-            Func<Task> onWillPopExit = null, Action onDidPopExit = null,
-            Func<Task> onCleanup = null)
+        public AnonymousPageLifecycleEvent(Func<UniTask> initialize = null,
+            Func<UniTask> onWillPushEnter = null, Action onDidPushEnter = null,
+            Func<UniTask> onWillPushExit = null, Action onDidPushExit = null,
+            Func<UniTask> onWillPopEnter = null, Action onDidPopEnter = null,
+            Func<UniTask> onWillPopExit = null, Action onDidPopExit = null,
+            Func<UniTask> onCleanup = null)
 #else
         public AnonymousPageLifecycleEvent(Func<IEnumerator> initialize = null,
             Func<IEnumerator> onWillPushEnter = null, Action onDidPushEnter = null,
@@ -56,12 +56,12 @@ namespace UnityScreenNavigator.Runtime.Core.Page
         }
 
 #if USN_USE_ASYNC_METHODS
-        public List<Func<Task>> OnInitialize { get; } = new List<Func<Task>>();
-        public List<Func<Task>> OnWillPushEnter { get; } = new List<Func<Task>>();
-        public List<Func<Task>> OnWillPushExit { get; } = new List<Func<Task>>();
-        public List<Func<Task>> OnWillPopEnter { get; } = new List<Func<Task>>();
-        public List<Func<Task>> OnWillPopExit { get; } = new List<Func<Task>>();
-        public List<Func<Task>> OnCleanup { get; } = new List<Func<Task>>();
+        public List<Func<UniTask>> OnInitialize { get; } = new List<Func<UniTask>>();
+        public List<Func<UniTask>> OnWillPushEnter { get; } = new List<Func<UniTask>>();
+        public List<Func<UniTask>> OnWillPushExit { get; } = new List<Func<UniTask>>();
+        public List<Func<UniTask>> OnWillPopEnter { get; } = new List<Func<UniTask>>();
+        public List<Func<UniTask>> OnWillPopExit { get; } = new List<Func<UniTask>>();
+        public List<Func<UniTask>> OnCleanup { get; } = new List<Func<UniTask>>();
 #else
         public List<Func<IEnumerator>> OnInitialize { get; } = new List<Func<IEnumerator>>();
         public List<Func<IEnumerator>> OnWillPushEnter { get; } = new List<Func<IEnumerator>>();
@@ -72,9 +72,9 @@ namespace UnityScreenNavigator.Runtime.Core.Page
 #endif
 
 #if USN_USE_ASYNC_METHODS
-        Task IPageLifecycleEvent.Initialize()
+        UniTask IPageLifecycleEvent.Initialize()
         {
-            return Task.WhenAll(OnInitialize.Select(x => x.Invoke()));
+            return UniTask.WhenAll(OnInitialize.Select(x => x.Invoke()));
         }
 #else
         IEnumerator IPageLifecycleEvent.Initialize()
@@ -85,9 +85,9 @@ namespace UnityScreenNavigator.Runtime.Core.Page
 #endif
 
 #if USN_USE_ASYNC_METHODS
-        Task IPageLifecycleEvent.WillPushEnter()
+        UniTask IPageLifecycleEvent.WillPushEnter()
         {
-            return Task.WhenAll(OnWillPushEnter.Select(x => x.Invoke()));
+            return UniTask.WhenAll(OnWillPushEnter.Select(x => x.Invoke()));
         }
 #else
         IEnumerator IPageLifecycleEvent.WillPushEnter()
@@ -103,9 +103,9 @@ namespace UnityScreenNavigator.Runtime.Core.Page
         }
 
 #if USN_USE_ASYNC_METHODS
-        Task IPageLifecycleEvent.WillPushExit()
+        UniTask IPageLifecycleEvent.WillPushExit()
         {
-            return Task.WhenAll(OnWillPushExit.Select(x => x.Invoke()));
+            return UniTask.WhenAll(OnWillPushExit.Select(x => x.Invoke()));
         }
 #else
         IEnumerator IPageLifecycleEvent.WillPushExit()
@@ -121,9 +121,9 @@ namespace UnityScreenNavigator.Runtime.Core.Page
         }
 
 #if USN_USE_ASYNC_METHODS
-        Task IPageLifecycleEvent.WillPopEnter()
+        UniTask IPageLifecycleEvent.WillPopEnter()
         {
-            return Task.WhenAll(OnWillPopEnter.Select(x => x.Invoke()));
+            return UniTask.WhenAll(OnWillPopEnter.Select(x => x.Invoke()));
         }
 #else
         IEnumerator IPageLifecycleEvent.WillPopEnter()
@@ -139,9 +139,9 @@ namespace UnityScreenNavigator.Runtime.Core.Page
         }
 
 #if USN_USE_ASYNC_METHODS
-        Task IPageLifecycleEvent.WillPopExit()
+        UniTask IPageLifecycleEvent.WillPopExit()
         {
-            return Task.WhenAll(OnWillPopExit.Select(x => x.Invoke()));
+            return UniTask.WhenAll(OnWillPopExit.Select(x => x.Invoke()));
         }
 #else
         IEnumerator IPageLifecycleEvent.WillPopExit()
@@ -157,9 +157,9 @@ namespace UnityScreenNavigator.Runtime.Core.Page
         }
 
 #if USN_USE_ASYNC_METHODS
-        Task IPageLifecycleEvent.Cleanup()
+        UniTask IPageLifecycleEvent.Cleanup()
         {
-            return Task.WhenAll(OnCleanup.Select(x => x.Invoke()));
+            return UniTask.WhenAll(OnCleanup.Select(x => x.Invoke()));
         }
 #else
         IEnumerator IPageLifecycleEvent.Cleanup()

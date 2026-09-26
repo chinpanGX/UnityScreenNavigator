@@ -1,10 +1,9 @@
-using Demo.Subsystem.PresentationFramework;
+using UnityScreenNavigator.Runtime.Core.Modal;
 
 namespace Demo.Core.Scripts.View.UnitTypeInformation
 {
-    public sealed class UnitTypeInformationModal : Modal<UnitTypeInformationView, UnitTypeInformationViewState>
+    public sealed class UnitTypeInformationModal : Modal
     {
-        protected override ViewInitializationTiming RootInitializationTiming =>
-            ViewInitializationTiming.BeforeFirstEnter;
+        public UnitTypeInformationView root;
     }
 }

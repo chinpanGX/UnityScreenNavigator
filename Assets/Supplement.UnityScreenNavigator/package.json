@@ -1,0 +1,15 @@
+{
+  "name": "com.chinpangx.supplement.unityscreennavigator",
+  "displayName": "Supplement.UnityScreenNavigator",
+  "version": "0.1.0",
+  "unity": "6000.0",
+  "license": "MIT",
+  "dependencies": {
+  },
+  "author": {
+    "name": "chinpanGX",
+    "url": "https://github.com/chinpanGX"
+  },
+  "type": "tool",
+  "description": "Presenter-driven DI layer and scene navigation on top of UnityScreenNavigator (vanilla, unforked)."
+}

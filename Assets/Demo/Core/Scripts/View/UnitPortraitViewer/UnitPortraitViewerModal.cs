@@ -1,10 +1,9 @@
-using Demo.Subsystem.PresentationFramework;
+using UnityScreenNavigator.Runtime.Core.Modal;
 
 namespace Demo.Core.Scripts.View.UnitPortraitViewer
 {
-    public sealed class UnitPortraitViewerModal : Modal<UnitPortraitViewerView, UnitPortraitViewerViewState>
+    public sealed class UnitPortraitViewerModal : Modal
     {
-        protected override ViewInitializationTiming RootInitializationTiming =>
-            ViewInitializationTiming.BeforeFirstEnter;
+        public UnitPortraitViewerView root;
     }
 }

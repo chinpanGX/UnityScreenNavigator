@@ -1,31 +1,51 @@
-using System.Threading.Tasks;
+using System;
+using System.Collections.Generic;
+using Cysharp.Threading.Tasks;
 using Demo.Core.Scripts.Foundation.Common;
-using Demo.Core.Scripts.Presentation.Shared;
 using Demo.Core.Scripts.View.UnitPortraitViewer;
+using Demo.Subsystem.Misc;
 using R3;
+using UnityScreenNavigator;
 
 namespace Demo.Core.Scripts.Presentation.UnitPortraitViewer
 {
+    [AssetAddress(ResourceKey.Prefabs.UnitPortraitViewerModal)]
     public sealed class UnitPortraitViewerModalPresenter
-        : ModalPresenterBase<UnitPortraitViewerModal, UnitPortraitViewerView, UnitPortraitViewerViewState>
+        : IPresenter, IScreenWithArgs<UnitPortraitViewerModalArgs>, ILifecycleHandler, IDisposableCollectionHolder
     {
-        private readonly string _unitTypeMasterId;
-        private readonly int _unitRank;
+        private readonly UnitPortraitViewerModal view;
+        private readonly IScreenNavigator screenNavigator;
+        private readonly UnitPortraitViewerModalArgs args;
+        private readonly List<IDisposable> disposables = new();
 
-        public UnitPortraitViewerModalPresenter(UnitPortraitViewerModal view, ITransitionService transitionService,
-            string unitTypeMasterId, int unitRank) : base(view, transitionService)
+        public UnitPortraitViewerModalPresenter(UnitPortraitViewerModal view, IScreenNavigator screenNavigator,
+            UnitPortraitViewerModalArgs args)
         {
-            _unitTypeMasterId = unitTypeMasterId;
-            _unitRank = unitRank;
+            this.view = view;
+            this.screenNavigator = screenNavigator;
+            this.args = args;
         }
 
-        protected override Task ViewDidLoad(UnitPortraitViewerModal view, UnitPortraitViewerViewState viewState)
-        {
-            viewState.Portrait.ImageResourceKey.Value =
-                ResourceKey.Textures.GetUnitPortrait(_unitTypeMasterId, _unitRank);
-            viewState.OnCloseButtonClicked.Subscribe(_ => TransitionService.PopCommandExecuted());
+        ICollection<IDisposable> IDisposableCollectionHolder.GetDisposableCollection() => disposables;
 
-            return Task.CompletedTask;
+        public async UniTask InitializeAsync()
+        {
+            var viewState = new UnitPortraitViewerViewState();
+            disposables.Add(viewState);
+
+            viewState.Portrait.ImageResourceKey.Value =
+                ResourceKey.Textures.GetUnitPortrait(args.UnitTypeMasterId, args.UnitRank);
+            viewState.OnCloseButtonClicked
+                .Subscribe(_ => screenNavigator.PopModalAsync(this).Forget())
+                .AddTo(this);
+
+            await view.root.InitializeAsync(viewState);
+        }
+
+        public void Dispose()
+        {
+            foreach (var disposable in disposables)
+                disposable.Dispose();
         }
     }
 }

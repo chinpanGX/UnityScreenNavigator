@@ -1,99 +1,108 @@
-using System.Threading.Tasks;
+using System;
+using System.Collections.Generic;
 using Cysharp.Threading.Tasks;
-using Demo.Core.Scripts.Presentation.Shared;
+using Demo.Core.Scripts.Foundation.Common;
+using Demo.Core.Scripts.Presentation.LockConfirmation;
 using Demo.Core.Scripts.UseCase.Setting;
 using Demo.Core.Scripts.View.Setting;
 using Demo.Subsystem.Misc;
 using R3;
+using UnityScreenNavigator;
 
 namespace Demo.Core.Scripts.Presentation.Setting
 {
-    public sealed class SettingsModalPresenter : ModalPresenterBase<SettingsModal, SettingsView, SettingsViewState>
+    [AssetAddress(ResourceKey.Prefabs.SettingsModal)]
+    public sealed class SettingsModalPresenter : IPresenter, ILifecycleHandler, IDisposableCollectionHolder
     {
-        private readonly SettingsUseCase _useCase;
-        private bool _dirty;
+        private readonly SettingsModal view;
+        private readonly IScreenNavigator screenNavigator;
+        private readonly SettingsUseCase useCase;
+        private readonly List<IDisposable> disposables = new();
+        private SettingsViewState viewState;
+        private bool dirty;
 
-        public SettingsModalPresenter(SettingsModal view, ITransitionService transitionService, SettingsUseCase useCase)
-            : base(view, transitionService)
+        public SettingsModalPresenter(SettingsModal view, IScreenNavigator screenNavigator, SettingsUseCase useCase)
         {
-            _useCase = useCase;
+            this.view = view;
+            this.screenNavigator = screenNavigator;
+            this.useCase = useCase;
         }
 
-        protected override async Task ViewDidLoad(SettingsModal view, SettingsViewState viewState)
+        ICollection<IDisposable> IDisposableCollectionHolder.GetDisposableCollection() => disposables;
+
+        public async UniTask InitializeAsync()
         {
+            viewState = new SettingsViewState();
+            disposables.Add(viewState);
+
             // Update models.
-            await _useCase.FetchSoundSettingsAsync();
-            var model = _useCase.Model;
+            await useCase.FetchSoundSettingsAsync();
+            var model = useCase.Model;
 
             // Set view state with initial values.
-            SetVoiceSettingsViewState(viewState, model.Sounds.Voice.Volume, model.Sounds.Voice.Muted);
-            SetBgmSettingsViewState(viewState, model.Sounds.Bgm.Volume, model.Sounds.Bgm.Muted);
-            SetSeSettingsViewState(viewState, model.Sounds.Se.Volume, model.Sounds.Se.Muted);
+            SetVoiceSettingsViewState(model.Sounds.Voice.Volume, model.Sounds.Voice.Muted);
+            SetBgmSettingsViewState(model.Sounds.Bgm.Volume, model.Sounds.Bgm.Muted);
+            SetSeSettingsViewState(model.Sounds.Se.Volume, model.Sounds.Se.Muted);
 
             // Observe changes of models.
             model.Sounds.Voice
                 .ValueChanged
-                .Subscribe(x => SetVoiceSettingsViewState(viewState, x.Volume, x.Muted))
+                .Subscribe(x => SetVoiceSettingsViewState(x.Volume, x.Muted))
                 .AddTo(this);
             model.Sounds.Bgm
                 .ValueChanged
-                .Subscribe(x => SetBgmSettingsViewState(viewState, x.Volume, x.Muted))
+                .Subscribe(x => SetBgmSettingsViewState(x.Volume, x.Muted))
                 .AddTo(this);
             model.Sounds.Se
                 .ValueChanged
-                .Subscribe(x => SetSeSettingsViewState(viewState, x.Volume, x.Muted))
+                .Subscribe(x => SetSeSettingsViewState(x.Volume, x.Muted))
                 .AddTo(this);
 
             // Observe changes of view state.
-            viewState.SoundSettings.IsVoiceEnabled.Subscribe(_ => _dirty = true).AddTo(this);
-            viewState.SoundSettings.IsBgmEnabled.Subscribe(_ => _dirty = true).AddTo(this);
-            viewState.SoundSettings.IsSeEnabled.Subscribe(_ => _dirty = true).AddTo(this);
-            viewState.SoundSettings.VoiceVolume.Subscribe(_ => _dirty = true).AddTo(this);
-            viewState.SoundSettings.SeVolume.Subscribe(_ => _dirty = true).AddTo(this);
-            viewState.SoundSettings.BgmVolume.Subscribe(_ => _dirty = true).AddTo(this);
+            viewState.SoundSettings.IsVoiceEnabled.Subscribe(_ => dirty = true).AddTo(this);
+            viewState.SoundSettings.IsBgmEnabled.Subscribe(_ => dirty = true).AddTo(this);
+            viewState.SoundSettings.IsSeEnabled.Subscribe(_ => dirty = true).AddTo(this);
+            viewState.SoundSettings.VoiceVolume.Subscribe(_ => dirty = true).AddTo(this);
+            viewState.SoundSettings.SeVolume.Subscribe(_ => dirty = true).AddTo(this);
+            viewState.SoundSettings.BgmVolume.Subscribe(_ => dirty = true).AddTo(this);
             viewState.CloseButtonClicked
-                .Subscribe(_ => TransitionService.PopCommandExecuted())
+                .Subscribe(_ => screenNavigator.PopModalAsync(this).Forget())
                 .AddTo(this);
             viewState.LockedButtonClicked
-                .Subscribe(_ => TransitionService.SettingsModalLockedButtonClicked())
+                .Subscribe(_ => screenNavigator.PushModalAsync<LockConfirmationModalPresenter>().Forget())
                 .AddTo(this);
+
+            await view.root.InitializeAsync(viewState);
         }
 
-        private void SetVoiceSettingsViewState(SettingsViewState viewState, float volume, bool isMuted)
+        private void SetVoiceSettingsViewState(float volume, bool isMuted)
         {
             viewState.SoundSettings.VoiceVolume.Value = volume;
             viewState.SoundSettings.IsVoiceEnabled.Value = !isMuted;
         }
 
-        private void SetBgmSettingsViewState(SettingsViewState viewState, float volume, bool isMuted)
+        private void SetBgmSettingsViewState(float volume, bool isMuted)
         {
             viewState.SoundSettings.BgmVolume.Value = volume;
             viewState.SoundSettings.IsBgmEnabled.Value = !isMuted;
         }
 
-        private void SetSeSettingsViewState(SettingsViewState viewState, float volume, bool isMuted)
+        private void SetSeSettingsViewState(float volume, bool isMuted)
         {
             viewState.SoundSettings.SeVolume.Value = volume;
             viewState.SoundSettings.IsSeEnabled.Value = !isMuted;
         }
 
-        protected override async Task ViewWillPopExit(SettingsModal view, SettingsViewState viewState)
-        {
-            await ViewWillExit(view, viewState);
-        }
+        public UniTask WillPushExitAsync() => SaveIfDirtyAsync();
 
-        protected override async Task ViewWillPushExit(SettingsModal view, SettingsViewState viewState)
-        {
-            await ViewWillExit(view, viewState);
-        }
+        public UniTask WillPopExitAsync() => SaveIfDirtyAsync();
 
-        private async UniTask ViewWillExit(SettingsModal view, SettingsViewState viewState)
+        private async UniTask SaveIfDirtyAsync()
         {
-            if (!_dirty)
+            if (!dirty)
                 return;
 
-            // Save sound settings
-            await _useCase.SaveSoundSettingsAsync
+            await useCase.SaveSoundSettingsAsync
             (
                 new SettingsUseCase.SaveSoundSettingsRequest(
                     viewState.SoundSettings.VoiceVolume.Value,
@@ -104,6 +113,12 @@ namespace Demo.Core.Scripts.Presentation.Setting
                     !viewState.SoundSettings.IsSeEnabled.Value
                 )
             );
+        }
+
+        public void Dispose()
+        {
+            foreach (var disposable in disposables)
+                disposable.Dispose();
         }
     }
 }

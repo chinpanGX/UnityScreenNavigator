@@ -2,7 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading.Tasks;
+using Cysharp.Threading.Tasks;
 using UnityScreenNavigator.Runtime.Foundation.Coroutine;
 
 namespace UnityScreenNavigator.Runtime.Core.Shared
@@ -56,7 +56,7 @@ namespace UnityScreenNavigator.Runtime.Core.Shared
                 }
         }
 
-        public async Task ExecuteLifecycleEventsSequentially(Func<TLifecycleEvent, Task> execute)
+        public async UniTask ExecuteLifecycleEventsSequentially(Func<TLifecycleEvent, UniTask> execute)
         {
             int? currentPriority = null;
             while ((currentPriority = FindNextPriority(currentPriority)) != null)
@@ -64,7 +64,7 @@ namespace UnityScreenNavigator.Runtime.Core.Shared
                 // LifecycleEvents with the same Priority are executed in parallel.
                 var lifecycleEvents = GetItems(currentPriority.Value);
                 var tasks = lifecycleEvents.Select(execute).ToArray();
-                await Task.WhenAll(tasks);
+                await UniTask.WhenAll(tasks);
             }
         }
 

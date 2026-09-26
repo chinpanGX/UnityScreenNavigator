@@ -1,5 +1,4 @@
 using System;
-using System.Threading.Tasks;
 using Cysharp.Threading.Tasks;
 using Demo.Core.Scripts.View.Foundation;
 using Demo.Core.Scripts.View.Foundation.Binders;
@@ -58,10 +57,10 @@ namespace Demo.Core.Scripts.View.UnitTypeInformation
             unitPortraitTabGroup.OnTabLoaded
                 .Subscribe(x =>
                 {
-                    Task WillEnter()
+                    UniTask WillEnter()
                     {
                         viewState.TabIndex.Value = x.Index;
-                        return Task.CompletedTask;
+                        return UniTask.CompletedTask;
                     }
 
                     var unitImageSheet = (UnitPortraitSheet)x.Sheet;

@@ -1,55 +1,82 @@
-﻿using System.Threading.Tasks;
+using System;
+using System.Collections.Generic;
+using Cysharp.Threading.Tasks;
 using Demo.Core.Scripts.Domain.Unit.MasterRepository;
 using Demo.Core.Scripts.Foundation.Common;
-using Demo.Core.Scripts.Presentation.Shared;
+using Demo.Core.Scripts.Presentation.UnitPortraitViewer;
 using Demo.Core.Scripts.View.UnitTypeInformation;
 using Demo.Subsystem.Misc;
 using R3;
+using UnityScreenNavigator;
 
 namespace Demo.Core.Scripts.Presentation.UnitTypeInformation
 {
-    public sealed class UnitTypeInformationModalPresenter : ModalPresenterBase<UnitTypeInformationModal,
-        UnitTypeInformationView, UnitTypeInformationViewState>
+    [AssetAddress(ResourceKey.Prefabs.UnitTypeInformationModal)]
+    public sealed class UnitTypeInformationModalPresenter
+        : IPresenter, IScreenWithArgs<UnitTypeInformationModalArgs>, ILifecycleHandler, IDisposableCollectionHolder
     {
-        private readonly IUnitMasterRepository _unitMasterRepository;
-        private readonly string _unitTypeMasterId;
+        private readonly UnitTypeInformationModal view;
+        private readonly IScreenNavigator screenNavigator;
+        private readonly IUnitMasterRepository unitMasterRepository;
+        private readonly UnitTypeInformationModalArgs args;
+        private readonly List<IDisposable> disposables = new();
+        private UnitTypeInformationViewState viewState;
 
-        public UnitTypeInformationModalPresenter(UnitTypeInformationModal view, ITransitionService transitionService,
-            IUnitMasterRepository unitMasterRepository, string unitTypeMasterId) : base(view, transitionService)
+        public UnitTypeInformationModalPresenter(UnitTypeInformationModal view, IScreenNavigator screenNavigator,
+            IUnitMasterRepository unitMasterRepository, UnitTypeInformationModalArgs args)
         {
-            _unitTypeMasterId = unitTypeMasterId;
-            _unitMasterRepository = unitMasterRepository;
+            this.view = view;
+            this.screenNavigator = screenNavigator;
+            this.unitMasterRepository = unitMasterRepository;
+            this.args = args;
         }
 
-        protected override async Task ViewDidLoad(UnitTypeInformationModal view, UnitTypeInformationViewState viewState)
+        ICollection<IDisposable> IDisposableCollectionHolder.GetDisposableCollection() => disposables;
+
+        public async UniTask InitializeAsync()
         {
-            var unitTypeTable = await _unitMasterRepository.FetchUnitTypeTableAsync();
-            var unitTypeMaster = unitTypeTable.FindById(_unitTypeMasterId);
+            viewState = new UnitTypeInformationViewState();
+            disposables.Add(viewState);
+
+            var unitTypeMasterId = args.UnitTypeMasterId;
+            var unitTypeTable = await unitMasterRepository.FetchUnitTypeTableAsync();
+            var unitTypeMaster = unitTypeTable.FindById(unitTypeMasterId);
 
             viewState.Title.Value = unitTypeMaster.Name;
             viewState.Rank1Thumbnail.ImageResourceKey.Value =
-                ResourceKey.Textures.GetUnitThumbnail(_unitTypeMasterId, 1);
+                ResourceKey.Textures.GetUnitThumbnail(unitTypeMasterId, 1);
             viewState.Rank2Thumbnail.ImageResourceKey.Value =
-                ResourceKey.Textures.GetUnitThumbnail(_unitTypeMasterId, 2);
+                ResourceKey.Textures.GetUnitThumbnail(unitTypeMasterId, 2);
             viewState.Rank3Thumbnail.ImageResourceKey.Value =
-                ResourceKey.Textures.GetUnitThumbnail(_unitTypeMasterId, 3);
+                ResourceKey.Textures.GetUnitThumbnail(unitTypeMasterId, 3);
             viewState.Rank1Description.Value = unitTypeMaster.Rank1Description;
             viewState.Rank2Description.Value = unitTypeMaster.Rank2Description;
             viewState.Rank3Description.Value = unitTypeMaster.Rank3Description;
-            viewState.Rank1Portrait.ImageResourceKey.Value = ResourceKey.Textures.GetUnitPortrait(_unitTypeMasterId, 1);
-            viewState.Rank2Portrait.ImageResourceKey.Value = ResourceKey.Textures.GetUnitPortrait(_unitTypeMasterId, 2);
-            viewState.Rank3Portrait.ImageResourceKey.Value = ResourceKey.Textures.GetUnitPortrait(_unitTypeMasterId, 3);
+            viewState.Rank1Portrait.ImageResourceKey.Value = ResourceKey.Textures.GetUnitPortrait(unitTypeMasterId, 1);
+            viewState.Rank2Portrait.ImageResourceKey.Value = ResourceKey.Textures.GetUnitPortrait(unitTypeMasterId, 2);
+            viewState.Rank3Portrait.ImageResourceKey.Value = ResourceKey.Textures.GetUnitPortrait(unitTypeMasterId, 3);
 
             viewState.OnCloseButtonClicked
-                .Subscribe(_ => TransitionService.PopCommandExecuted())
+                .Subscribe(_ => screenNavigator.PopModalAsync(this).Forget())
                 .AddTo(this);
             viewState.OnExpandButtonClicked
                 .Subscribe(_ =>
                 {
                     var unitRank = viewState.TabIndex.Value + 1;
-                    TransitionService.UnitTypeInformationExpandButtonClicked(_unitTypeMasterId, unitRank);
+                    screenNavigator
+                        .PushModalAsync<UnitPortraitViewerModalPresenter, UnitPortraitViewerModalArgs>(
+                            new UnitPortraitViewerModalArgs(unitTypeMasterId, unitRank))
+                        .Forget();
                 })
                 .AddTo(this);
+
+            await view.root.InitializeAsync(viewState);
+        }
+
+        public void Dispose()
+        {
+            foreach (var disposable in disposables)
+                disposable.Dispose();
         }
     }
 }
