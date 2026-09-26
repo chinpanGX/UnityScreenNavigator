@@ -117,6 +117,17 @@ public interface IScreenNavigator
     UniTask PopModalAsync(bool playAnimation = true, int popCount = 1);
     UniTask PopModalAsync(IPresenter presenter, bool playAnimation = true);
 
+    // 通信エラーダイアログ等、Modalよりさらに前面(Overlay Canvas)に出す画面(3.6参照)
+    UniTask<TPresenter> PushOverlayAsync<TPresenter>(
+        bool playAnimation = true)
+        where TPresenter : IPresenter;
+    UniTask<TPresenter> PushOverlayAsync<TPresenter, TArgs>(TArgs args,
+        bool playAnimation = true)
+        where TPresenter : IPresenter, IScreenWithArgs<TArgs>
+        where TArgs : class;
+    UniTask PopOverlayAsync(bool playAnimation = true, int popCount = 1);
+    UniTask PopOverlayAsync(IPresenter presenter, bool playAnimation = true);
+
     // Pop完了(=IPresenter.CompleteAsyncが呼ばれた)を待って結果を受け取る(3.4参照)
     UniTask<TResult> WaitForPopAsync<TResult>(IPresenter presenter, CancellationToken cancellation = default);
 }
@@ -378,6 +389,37 @@ public static class ScreenNavigatorExtensions
   知らないため、`ChangeSceneAsync`を呼ぶ前にアプリが`screenNavigator.ClearAsync(pageContainer, modalContainer)`
   を呼ぶ、という順序で組み合わせる
 
+### 3.6 Overlay(通信エラーダイアログ等、Page/Modalより前面に出す画面)
+
+Page/Modalとは別に、常に最前面(Modal表示中でも隠れない)に出したい画面(通信エラーダイアログ等)向けに
+`PushOverlayAsync`/`PopOverlayAsync`を用意する。**Modalが表示中でもさらに前面に出したい**という要件が
+起点なので、Modalのスタックとは別の、3本目のスタックとして扱う。
+
+実装はPage/Modalと同じくUSN本体のコンテナをそのまま使う。USNには「Overlay」というコンテナ種別は無いが、
+`ModalContainer`自体がシーンに複数個置いて名前で区別できる作りになっている(`ModalContainer.Find(name)`)
+ため、**新しいコンテナクラスを自作せず、`ModalContainer`をもう1つ(Overlay Canvas用に)追加する**だけで
+済む。Modalと同じPush/Pop・ライフサイクルイベント・自己Close(3.4)・`ClearAsync`(3.5)がそのまま使える。
+
+```csharp
+[RequireComponent(typeof(ModalContainer))]
+public sealed class OverlayContainer : MonoBehaviour
+{
+    public ModalContainer Container => container ??= GetComponent<ModalContainer>();
+    private ModalContainer container;
+}
+```
+
+`ModalContainer`をそのまま2つ`PageContainer`/`ModalContainer`のように渡すと、VContainerが同じ型の
+登録を区別できず解決に失敗する。そのため`OverlayContainer`という薄いマーカーコンポーネント(実体は
+`GetComponent<ModalContainer>()`を返すだけ)を挟み、`ScreenNavigator`のコンストラクタは
+`ModalContainer modalContainer, OverlayContainer overlayContainer`のように**型で**区別して受け取る。
+
+- Overlay用のGameObject構成は既存の`ModalContainer`(例: `MainModalContainer`)と同じで、Overlay Canvas
+  (Modal Canvasよりさらに高い`Sorting Order`)配下に置くだけでよい
+- Toastのような「複数同時に表示され、自動で消える」ものは、Modalのスタック(1つが前面、他は裏に隠れる)
+  にはそのまま乗らない。今回のOverlayは通信エラーダイアログ(Modal同様、閉じるまで残る1つのスタック)
+  向けの設計で、Toastの多重表示は別途検討する
+
 ---
 
 ## 4. シーン遷移
@@ -559,3 +601,6 @@ USNの拡張要望としてデフォルトでAddressablesLoaderを利用する�
    `Supplement.Loader`(`com.chinpangx.supplement`)を依存に追加し、`ISceneLoader`をそのまま利用した
 3. Client側 `Atlas.Navigation`・`HomeLifetimeScope`/`BattleLifetimeScope` 等を`Supplement.UnityScreenNavigator`
    に置き換える。Atlas側`manifest.json`に2章の2つのgit URLを登録する
+4. ~~`OverlayContainer`/`PushOverlayAsync`/`PopOverlayAsync`(3.6)を実装する~~ C#側は実装済み。
+   Demoの`Overlay Canvas`配下にモーダル用GameObject(`ModalContainer`+`OverlayContainer`)を追加し、
+   `DemoLifetimeScope`の`overlayContainer`フィールドに割り当てる作業が残っている(シーンの手動編集)

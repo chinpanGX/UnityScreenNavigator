@@ -4,9 +4,9 @@ using Cysharp.Threading.Tasks;
 using Demo.Core.Scripts.Domain.UnitShop.MasterRepository;
 using Demo.Core.Scripts.Domain.UnitShop.Model;
 using Demo.Core.Scripts.Foundation.Common;
+using Demo.Core.Scripts.Presentation.Overlay;
 using Demo.Core.Scripts.Presentation.UnitTypeInformation;
 using Demo.Core.Scripts.UseCase.UnitShop;
-using Demo.Core.Scripts.View.Overlay;
 using Demo.Core.Scripts.View.UnitShop;
 using Demo.Subsystem.Misc;
 using R3;
@@ -21,18 +21,15 @@ namespace Demo.Core.Scripts.Presentation.UnitShop
         private readonly IScreenNavigator screenNavigator;
         private readonly IUnitShopMasterRepository unitShopMasterRepository;
         private readonly UnitShopUseCase unitShopUseCase;
-        private readonly ConnectingView connectingView;
         private readonly List<IDisposable> disposables = new();
 
         public UnitShopPagePresenter(UnitShopPage view, IScreenNavigator screenNavigator,
-            UnitShopUseCase unitShopUseCase, IUnitShopMasterRepository unitShopMasterRepository,
-            ConnectingView connectingView)
+            UnitShopUseCase unitShopUseCase, IUnitShopMasterRepository unitShopMasterRepository)
         {
             this.view = view;
             this.screenNavigator = screenNavigator;
             this.unitShopUseCase = unitShopUseCase;
             this.unitShopMasterRepository = unitShopMasterRepository;
-            this.connectingView = connectingView;
         }
 
         ICollection<IDisposable> IDisposableCollectionHolder.GetDisposableCollection() => disposables;
@@ -118,11 +115,11 @@ namespace Demo.Core.Scripts.Presentation.UnitShop
 
             async UniTask BuyAsync()
             {
-                await connectingView.ShowAsync();
+                var connecting = await screenNavigator.PushOverlayAsync<ConnectingModalPresenter>();
                 var request = new UnitShopUseCase.PurchaseItemRequest(model.Id);
                 await unitShopUseCase.PurchaseItemAsync(request);
                 viewState.IsSoldOut.Value = true;
-                await connectingView.HideAsync();
+                await screenNavigator.PopOverlayAsync(connecting);
             }
         }
 

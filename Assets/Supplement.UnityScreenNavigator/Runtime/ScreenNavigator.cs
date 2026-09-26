@@ -26,13 +26,16 @@ namespace UnityScreenNavigator
 
         private readonly PageContainer pageContainer;
         private readonly ModalContainer modalContainer;
+        private readonly ModalContainer overlayContainer;
         private readonly IObjectResolver resolver;
         private readonly Dictionary<IPresenter, Entry> entries = new();
 
-        public ScreenNavigator(PageContainer pageContainer, ModalContainer modalContainer, IObjectResolver resolver)
+        public ScreenNavigator(PageContainer pageContainer, ModalContainer modalContainer,
+            OverlayContainer overlayContainer, IObjectResolver resolver)
         {
             this.pageContainer = pageContainer;
             this.modalContainer = modalContainer;
+            this.overlayContainer = overlayContainer.Container;
             this.resolver = resolver;
         }
 
@@ -66,27 +69,47 @@ namespace UnityScreenNavigator
         public UniTask<TPresenter> PushModalAsync<TPresenter>(bool playAnimation = true)
             where TPresenter : IPresenter
         {
-            return PushModalInternalAsync<TPresenter>(null, playAnimation);
+            return PushModalLikeInternalAsync<TPresenter>(modalContainer, null, playAnimation);
         }
 
         public UniTask<TPresenter> PushModalAsync<TPresenter, TArgs>(TArgs args, bool playAnimation = true)
             where TPresenter : IPresenter, IScreenWithArgs<TArgs>
             where TArgs : class
         {
-            return PushModalInternalAsync<TPresenter>(args, playAnimation);
+            return PushModalLikeInternalAsync<TPresenter>(modalContainer, args, playAnimation);
         }
 
-        public async UniTask PopModalAsync(bool playAnimation = true, int popCount = 1)
+        public UniTask PopModalAsync(bool playAnimation = true, int popCount = 1)
         {
-            await modalContainer.Pop(playAnimation, popCount).Task.AsUniTask();
+            return PopModalLikeAsync(modalContainer, playAnimation, popCount);
         }
 
-        public async UniTask PopModalAsync(IPresenter presenter, bool playAnimation = true)
+        public UniTask PopModalAsync(IPresenter presenter, bool playAnimation = true)
         {
-            var entry = GetEntry(presenter);
-            var orderedIds = modalContainer.OrderedModalIds;
-            var popCount = orderedIds.Count - IndexOf(orderedIds, entry.ScreenId);
-            await modalContainer.Pop(playAnimation, popCount).Task.AsUniTask();
+            return PopModalLikeAsync(modalContainer, presenter, playAnimation);
+        }
+
+        public UniTask<TPresenter> PushOverlayAsync<TPresenter>(bool playAnimation = true)
+            where TPresenter : IPresenter
+        {
+            return PushModalLikeInternalAsync<TPresenter>(overlayContainer, null, playAnimation);
+        }
+
+        public UniTask<TPresenter> PushOverlayAsync<TPresenter, TArgs>(TArgs args, bool playAnimation = true)
+            where TPresenter : IPresenter, IScreenWithArgs<TArgs>
+            where TArgs : class
+        {
+            return PushModalLikeInternalAsync<TPresenter>(overlayContainer, args, playAnimation);
+        }
+
+        public UniTask PopOverlayAsync(bool playAnimation = true, int popCount = 1)
+        {
+            return PopModalLikeAsync(overlayContainer, playAnimation, popCount);
+        }
+
+        public UniTask PopOverlayAsync(IPresenter presenter, bool playAnimation = true)
+        {
+            return PopModalLikeAsync(overlayContainer, presenter, playAnimation);
         }
 
         public async UniTask<TResult> WaitForPopAsync<TResult>(IPresenter presenter,
@@ -124,18 +147,32 @@ namespace UnityScreenNavigator
             return presenter;
         }
 
-        private async UniTask<TPresenter> PushModalInternalAsync<TPresenter>(object args, bool playAnimation)
+        private async UniTask<TPresenter> PushModalLikeInternalAsync<TPresenter>(ModalContainer container,
+            object args, bool playAnimation)
             where TPresenter : IPresenter
         {
             var resourceKey = GetResourceKey<TPresenter>();
             TPresenter presenter = default;
-            var handle = modalContainer.Push(resourceKey, playAnimation, onLoad: loaded =>
+            var handle = container.Push(resourceKey, playAnimation, onLoad: loaded =>
             {
                 presenter = CreateEntry<TPresenter>(args, loaded.modal, loaded.modalId);
                 loaded.modal.AddLifecycleEvent(new ModalLifecycleAdapter(presenter, OnScreenCleanup));
             });
             await handle.Task.AsUniTask();
             return presenter;
+        }
+
+        private static async UniTask PopModalLikeAsync(ModalContainer container, bool playAnimation, int popCount)
+        {
+            await container.Pop(playAnimation, popCount).Task.AsUniTask();
+        }
+
+        private async UniTask PopModalLikeAsync(ModalContainer container, IPresenter presenter, bool playAnimation)
+        {
+            var entry = GetEntry(presenter);
+            var orderedIds = container.OrderedModalIds;
+            var popCount = orderedIds.Count - IndexOf(orderedIds, entry.ScreenId);
+            await container.Pop(playAnimation, popCount).Task.AsUniTask();
         }
 
         private TPresenter CreateEntry<TPresenter>(object args, object view, string screenId)

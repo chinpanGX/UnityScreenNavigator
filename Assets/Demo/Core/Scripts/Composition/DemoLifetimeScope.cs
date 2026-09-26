@@ -10,7 +10,6 @@ using Demo.Core.Scripts.MasterRepository.Unit;
 using Demo.Core.Scripts.MasterRepository.UnitShop;
 using Demo.Core.Scripts.UseCase.Setting;
 using Demo.Core.Scripts.UseCase.UnitShop;
-using Demo.Core.Scripts.View.Overlay;
 using UnityEngine;
 using UnityScreenNavigator.Runtime.Core.Modal;
 using UnityScreenNavigator.Runtime.Core.Page;
@@ -23,13 +22,13 @@ namespace Demo.Core.Scripts.Composition
     {
         [SerializeField] private PageContainer pageContainer;
         [SerializeField] private ModalContainer modalContainer;
-        [SerializeField] private ConnectingView connectingView;
+        [SerializeField] private UnityScreenNavigator.OverlayContainer overlayContainer;
 
         protected override void Configure(IContainerBuilder builder)
         {
             builder.RegisterComponent(pageContainer);
             builder.RegisterComponent(modalContainer);
-            builder.RegisterComponent(connectingView);
+            builder.RegisterComponent(overlayContainer);
             builder.Register<UnityScreenNavigator.IScreenNavigator, UnityScreenNavigator.ScreenNavigator>(
                 Lifetime.Singleton);
 

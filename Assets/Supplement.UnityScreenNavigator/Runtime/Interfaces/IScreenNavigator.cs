@@ -36,6 +36,21 @@ namespace UnityScreenNavigator
 
         UniTask PopModalAsync(IPresenter presenter, bool playAnimation = true);
 
+        /// <summary>
+        /// 通信エラーダイアログ等、Page/Modalより前面(Overlay Canvas)に出す画面をPushする。
+        /// Modalと同じスタック管理だが、Modalが表示中でも常に最前面に出る。
+        /// </summary>
+        UniTask<TPresenter> PushOverlayAsync<TPresenter>(bool playAnimation = true)
+            where TPresenter : IPresenter;
+
+        UniTask<TPresenter> PushOverlayAsync<TPresenter, TArgs>(TArgs args, bool playAnimation = true)
+            where TPresenter : IPresenter, IScreenWithArgs<TArgs>
+            where TArgs : class;
+
+        UniTask PopOverlayAsync(bool playAnimation = true, int popCount = 1);
+
+        UniTask PopOverlayAsync(IPresenter presenter, bool playAnimation = true);
+
         /// <summary>指定したPresenterがPopされ、CompleteAsyncの結果が返るまで待つ。</summary>
         UniTask<TResult> WaitForPopAsync<TResult>(IPresenter presenter, CancellationToken cancellation = default);
     }

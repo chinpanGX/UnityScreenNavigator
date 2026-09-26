@@ -1,33 +1,13 @@
-﻿using Cysharp.Threading.Tasks;
-using UnityEngine;
+﻿using UnityScreenNavigator.Runtime.Core.Modal;
 
 namespace Demo.Core.Scripts.View.Overlay
 {
-    public sealed class ConnectingView : MonoBehaviour
+    /// <summary>
+    /// 通信中インジケーター。Push/Popされている間だけ表示される、Overlay用のModal。
+    /// 表示・非表示の切り替えはUSN本体のPush/Pop(トランジション込み)に任せるため、
+    /// 独自のShow/Hideは持たない。
+    /// </summary>
+    public sealed class ConnectingView : Modal
     {
-        public CanvasGroup canvasGroup;
-
-        private void Start()
-        {
-            canvasGroup.alpha = 0;
-            canvasGroup.interactable = false;
-            canvasGroup.blocksRaycasts = false;
-        }
-
-        public UniTask ShowAsync()
-        {
-            canvasGroup.alpha = 1;
-            canvasGroup.interactable = true;
-            canvasGroup.blocksRaycasts = true;
-            return UniTask.CompletedTask;
-        }
-
-        public UniTask HideAsync()
-        {
-            canvasGroup.alpha = 0;
-            canvasGroup.interactable = false;
-            canvasGroup.blocksRaycasts = false;
-            return UniTask.CompletedTask;
-        }
     }
 }
