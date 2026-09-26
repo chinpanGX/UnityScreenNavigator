@@ -1,6 +1,6 @@
 {
   "dependencies": {
-    "com.chinpangx.supplement": "https://github.com/chinpanGX/Supplement.git?path=Assets/Supplement",
+    "com.chinpangx.supplement": "file:../../Supplement/Assets/Supplement",
     "com.cysharp.r3": "https://github.com/Cysharp/R3.git?path=src/R3.Unity/Assets/R3.Unity",
     "com.cysharp.unitask": "https://github.com/Cysharp/UniTask.git?path=src/UniTask/Assets/Plugins/UniTask",
     "com.harumak.unityuiplayables": "https://github.com/Haruma-K/UnityUIPlayables.git?path=/Assets/UnityUIPlayables",

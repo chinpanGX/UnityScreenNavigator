@@ -1,5 +1,6 @@
 {
     "name": "Demo.Composition",
+    "rootNamespace": "",
     "references": [
         "GUID:77221876cc6b8244180b96e320b1bcd4",
         "GUID:f51ebe6a0ceec4240a699833d6309b23",
@@ -13,7 +14,8 @@
         "GUID:53d18504639cf49d4acbabb6c5f5dcd4",
         "GUID:b3a95175df2a441c4aad0832091c5014",
         "GUID:fc6f60911547f45859cab1414d5e78c7",
-        "GUID:b0214a6008ed146ff8f122a6a9c2f6cc"
+        "GUID:b0214a6008ed146ff8f122a6a9c2f6cc",
+        "GUID:4b7a874a3b17d434aaecc3633e34abb6"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

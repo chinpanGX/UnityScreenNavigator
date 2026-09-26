@@ -3,9 +3,11 @@ using System.Collections.Generic;
 using System.Reflection;
 using System.Threading;
 using Cysharp.Threading.Tasks;
+using UnityEngine;
 using UnityScreenNavigator.Runtime.Core.Modal;
 using UnityScreenNavigator.Runtime.Core.Page;
 using VContainer;
+using VContainer.Unity;
 
 namespace UnityScreenNavigator
 {
@@ -185,6 +187,12 @@ namespace UnityScreenNavigator
                 builder.RegisterInstance(view, view.GetType());
                 builder.Register<TPresenter>(Lifetime.Transient);
             });
+
+            // ViewのGameObjectはUSN側のInstantiateで生成され、VContainerの通常のプレハブ生成経路
+            // (自動Inject)を通らない。View自身やその子にある[Inject]メソッドを動かすには、
+            // ここで明示的にInjectする必要がある。
+            scope.InjectGameObject(((Component)view).gameObject);
+
             var presenter = scope.Resolve<TPresenter>();
 
             entries[presenter] = new Entry

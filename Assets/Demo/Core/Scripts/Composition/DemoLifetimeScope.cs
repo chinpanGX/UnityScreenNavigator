@@ -16,6 +16,7 @@ using UnityScreenNavigator.Runtime.Core.Page;
 using VContainer;
 using VContainer.Unity;
 
+
 namespace Demo.Core.Scripts.Composition
 {
     public sealed class DemoLifetimeScope : LifetimeScope
@@ -42,7 +43,7 @@ namespace Demo.Core.Scripts.Composition
             builder.Register<SettingsUseCase>(Lifetime.Singleton);
             builder.Register<UnitShopUseCase>(Lifetime.Singleton);
 
-            builder.RegisterEntryPoint<DemoEntryPoint>();
+            builder.RegisterEntryPoint<DemoEntryPoint>();            
         }
     }
 }
