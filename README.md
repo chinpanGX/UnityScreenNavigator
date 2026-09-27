@@ -6,6 +6,8 @@
 
 Library for screen transitions, transition animations, transition history stacking, and screen lifecycle management in Unity's uGUI.
 
+This is a fork of [Haruma-K/UnityScreenNavigator](https://github.com/Haruma-K/UnityScreenNavigator). See [Differences from the Original](#differences-from-the-original) for the differences.
+
 <p align="center">
   <img width="80%" src="https://user-images.githubusercontent.com/47441314/137313323-b2f24a0c-1ee3-4df0-a175-05fba32d9af3.gif" alt="Demo">
 </p>
@@ -20,6 +22,9 @@ Library for screen transitions, transition animations, transition history stacki
 - [Overview](#overview)
     - [Features](#features)
     - [Demo](#demo)
+- [Differences from the Original](#differences-from-the-original)
+    - [Changes](#changes)
+    - [Additions](#additions)
 - [Setup](#setup)
     - [Requirement](#requirement)
     - [Install](#install)
@@ -48,6 +53,15 @@ Library for screen transitions, transition animations, transition history stacki
     - [Use Addressable Asset System for the loading](#use-addressable-asset-system-for-the-loading)
     - [Load synchronously](#load-synchronously)
     - [Preloading](#preloading)
+- [Presenter-Driven Navigation](#presenter-driven-navigation)
+    - [Overview of presenter-driven navigation](#overview-of-presenter-driven-navigation)
+    - [Register with VContainer](#register-with-vcontainer)
+    - [Create a presenter and push it](#create-a-presenter-and-push-it)
+    - [Pass arguments to a screen](#pass-arguments-to-a-screen)
+    - [Receive a result from a screen](#receive-a-result-from-a-screen)
+    - [Show screens in front of modals with Overlay](#show-screens-in-front-of-modals-with-overlay)
+    - [Pop all screens at once](#pop-all-screens-at-once)
+    - [Switch scenes](#switch-scenes)
 - [Other Features](#other-features)
     - [Pop multiple screens at once](#pop-multiple-screens-at-once)
     - [Don't stack pages in history](#dont-stack-pages-in-history)
@@ -89,17 +103,48 @@ For more information, including copyright, please refer to the following website
 
 * [JewelSaviorFREE](http://www.jewel-s.jp/)
 
+## Differences from the Original
+This repository is a fork of [Haruma-K/UnityScreenNavigator](https://github.com/Haruma-K/UnityScreenNavigator) (based on 1.8.0).
+The differences from the original are as follows. Sections changed or added in this fork are marked with a note at the beginning.
+
+#### Changes
+
+| Item | Original | This fork |
+|---|---|---|
+| Async lifecycle events | `System.Threading.Tasks.Task`, disabled by default (add `USN_USE_ASYNC_METHODS` to `Scripting Define Symbols` manually) | `Cysharp.Threading.Tasks.UniTask`, enabled by default (`USN_USE_ASYNC_METHODS` is defined automatically). See [Use async methods instead of coroutines](#use-async-methods-instead-of-coroutines) |
+| Dependencies | None | UniTask, VContainer, and Supplement are required. See [Requirement](#requirement) |
+| `autoReferenced` of the assemblies | `true` | `false` (add a reference to `UnityScreenNavigator` in your assembly definition) |
+| Install URL | `https://github.com/Haruma-K/UnityScreenNavigator.git?path=/Assets/UnityScreenNavigator` | `https://github.com/chinpanGX/UnityScreenNavigator.git?path=/Assets/UnityScreenNavigator` |
+
+#### Additions
+The following are added under `Runtime/ChinpanGX`. See [Presenter-Driven Navigation](#presenter-driven-navigation) for details.
+
+| Feature | Types |
+|---|---|
+| Presenter-driven page / modal transitions with VContainer | `IScreenNavigator`, `ScreenNavigator`, `IPresenter`, `ILifecycleHandler`, `IScreenWithArgs<TArgs>`, `AssetAddressAttribute` |
+| Overlay layer drawn in front of pages and modals | `OverlayContainer`, `IScreenNavigator.PushOverlayAsync()` / `PopOverlayAsync()` |
+| Pop all screens at once | `ScreenNavigatorExtensions.ClearAsync()` |
+| Scene switching | `ISceneNavigator`, `SceneNavigator` |
+
+The original APIs such as `PageContainer`, `ModalContainer`, and `SheetContainer` are still available.
+
 ## Setup
 
 #### Requirement
 * Unity 6 (6000.0) or higher
 * uGUI (UIElements not supported)
 
+The following are required only in this fork.
+
+* [UniTask](https://github.com/Cysharp/UniTask)
+* [VContainer](https://github.com/hadashiA/VContainer)
+* [Supplement](https://github.com/chinpanGX/Supplement)
+
 #### Install
 1. Open the Package Manager from Window > Package Manager
 2. "+" button > Add package from git URL
 3. Enter the following to install
-   * https://github.com/Haruma-K/UnityScreenNavigator.git?path=/Assets/UnityScreenNavigator
+   * https://github.com/chinpanGX/UnityScreenNavigator.git?path=/Assets/UnityScreenNavigator
 
 <p align="center">
   <img width="80%" src="https://user-images.githubusercontent.com/47441314/118421190-97842b00-b6fb-11eb-9f94-4dc94e82367a.png" alt="Package Manager">
@@ -110,14 +155,28 @@ Or, open Packages/manifest.json and add the following to the dependencies block.
 ```json
 {
     "dependencies": {
-        "com.harumak.unityscreennavigator": "https://github.com/Haruma-K/UnityScreenNavigator.git?path=/Assets/UnityScreenNavigator"
+        "com.harumak.unityscreennavigator": "https://github.com/chinpanGX/UnityScreenNavigator.git?path=/Assets/UnityScreenNavigator"
+    }
+}
+```
+
+> **Changed in this fork**: The dependencies (UniTask, VContainer, and Supplement) are not installed automatically, because Git URLs cannot be specified in the dependencies of a package.
+> Install them before installing this package. For example, add the following to Packages/manifest.json.
+
+```json
+{
+    "dependencies": {
+        "com.chinpangx.supplement": "https://github.com/chinpanGX/Supplement.git?path=Assets/Supplement",
+        "com.cysharp.unitask": "https://github.com/Cysharp/UniTask.git?path=src/UniTask/Assets/Plugins/UniTask",
+        "jp.hadashikick.vcontainer": "https://github.com/hadashiA/VContainer.git?path=VContainer/Assets/VContainer",
+        "com.harumak.unityscreennavigator": "https://github.com/chinpanGX/UnityScreenNavigator.git?path=/Assets/UnityScreenNavigator"
     }
 }
 ```
 
 If you want to set the target version, specify it like follow.
 
-* https://github.com/Haruma-K/UnityScreenNavigator.git?path=/Assets/UnityScreenNavigator#1.0.0
+* https://github.com/chinpanGX/UnityScreenNavigator.git?path=/Assets/UnityScreenNavigator#1.0.0
 
 ## Basic Screen Transition
 
@@ -700,28 +759,42 @@ Note that if you implement `ISheetContainerCallbackReceiver` to `MonoBehaviour` 
 it will be registered to `SheetContainer` without calling `SheetContainer.AddCallbackReceiver()`.
 
 #### Use async methods instead of coroutines
+
+> **Changed in this fork**: The original uses `System.Threading.Tasks.Task` and requires adding `USN_USE_ASYNC_METHODS` to `Scripting Define Symbols` manually.
+> This fork uses `UniTask` and enables it by default.
+
 You can also use asynchronous methods instead of coroutines to define lifecycle events, as shown below.
 
 ```cs
-using System.Threading.Tasks;
+using Cysharp.Threading.Tasks;
 using UnityScreenNavigator.Runtime.Core.Page;
 
 public class SomePage : Page
 {
     // Using asynchronous methods to define lifecycle events
-    public override async Task Initialize()
+    public override async UniTask Initialize()
     {
-        await Task.Delay(100);
+        await UniTask.Delay(100);
     }
 }
 ```
 
-To use asynchronous methods, add `Scripting Define Symbols` in the following steps.
+The asynchronous methods (UniTask) are enabled by default.  
+`UnityScreenNavigator.asmdef` defines `USN_USE_ASYNC_METHODS` via `Version Defines` when `com.cysharp.unitask` is installed,
+so you don't need to add it to `Scripting Define Symbols` manually.
 
-* Player Settings > Other Settings
-* Add `USN_USE_ASYNC_METHODS` to `Scripting Define Symbols`.
+Note that `USN_USE_ASYNC_METHODS` defined by `Version Defines` is only valid inside that assembly.  
+If your own code uses `#if USN_USE_ASYNC_METHODS`, add the same `Version Defines` entry to your assembly definition.
 
-Note that `Scripting Define Symbols` needs to be set for all platforms.
+```json
+"versionDefines": [
+    {
+        "name": "com.cysharp.unitask",
+        "expression": "",
+        "define": "USN_USE_ASYNC_METHODS"
+    }
+]
+```
 
 ## Loading Screen Resources
 
@@ -819,6 +892,203 @@ container.ReleasePreloaded(pageName);
 
 Please refer to [HomePage in demo](https://github.com/Haruma-K/UnityScreenNavigator/blob/master/Assets/Demo/Scripts/HomePage.cs) for the practical implementation.  
 When the `Home` page is initialized, the `Shop` page is also loaded and destroyed at the same time.
+
+## Presenter-Driven Navigation
+
+> **Added in this fork**: This feature does not exist in the original.
+
+#### Overview of presenter-driven navigation
+This layer (`Runtime/ChinpanGX`) drives screen transitions from a Presenter class instead of the `Page`/`Modal` components themselves.
+
+* `IScreenNavigator` pushes a screen by the type of its Presenter. A child scope of VContainer is created for each push, and the Presenter is resolved from it.
+* The screen component (the `Page`/`Modal` subclass on the loaded Prefab) and the arguments are injected into the Presenter's constructor.
+* The lifecycle events of `Page`/`Modal` are forwarded to the Presenter, so the Presenter doesn't need to know whether it is a page or a modal.
+* In addition to pages and modals, an **Overlay** layer is available, which is always drawn in front of the modals.
+
+It can be used together with the original `PageContainer`/`ModalContainer` APIs.
+
+#### Register with VContainer
+Register the containers and `ScreenNavigator` in your `LifetimeScope`.
+
+```cs
+using UnityEngine;
+using UnityScreenNavigator;
+using UnityScreenNavigator.Runtime.Core.Modal;
+using UnityScreenNavigator.Runtime.Core.Page;
+using VContainer;
+using VContainer.Unity;
+
+public sealed class SomeLifetimeScope : LifetimeScope
+{
+    [SerializeField] private PageContainer pageContainer;
+    [SerializeField] private ModalContainer modalContainer;
+    [SerializeField] private OverlayContainer overlayContainer;
+
+    protected override void Configure(IContainerBuilder builder)
+    {
+        builder.RegisterComponent(pageContainer);
+        builder.RegisterComponent(modalContainer);
+        builder.RegisterComponent(overlayContainer);
+        builder.Register<IScreenNavigator, ScreenNavigator>(Lifetime.Singleton);
+    }
+}
+```
+
+`ScreenNavigator` requires an `OverlayContainer`. See [Show screens in front of modals with Overlay](#show-screens-in-front-of-modals-with-overlay) for how to set it up.
+
+#### Create a presenter and push it
+Implement `IPresenter` and specify the resource key of the screen Prefab with `AssetAddressAttribute`.
+The resource key is passed to the container as is, so it is resolved by the `AssetLoader` of the container.
+
+```cs
+using Cysharp.Threading.Tasks;
+using UnityScreenNavigator;
+
+[AssetAddress("prefab_shop_page")]
+public sealed class ShopPagePresenter : IPresenter
+{
+    private readonly ShopPage view; // The Page/Modal component of the loaded Prefab
+    private readonly IScreenNavigator screenNavigator;
+
+    public ShopPagePresenter(ShopPage view, IScreenNavigator screenNavigator)
+    {
+        this.view = view;
+        this.screenNavigator = screenNavigator;
+    }
+
+    // IPresenter includes ILifecycleHandler. Override only the events you need.
+    public async UniTask InitializeAsync()
+    {
+        await view.SetupAsync();
+        view.OnBackButtonClicked += () => screenNavigator.PopPageAsync(this).Forget();
+    }
+
+    public void Dispose()
+    {
+    }
+}
+```
+
+Then push it with the type of the Presenter.
+
+```cs
+var presenter = await screenNavigator.PushPageAsync<ShopPagePresenter>();
+```
+
+The Presenter can receive the following in its constructor.
+
+* The `Page`/`Modal` component of the loaded Prefab (registered with its concrete type)
+* The arguments passed when pushing (registered with their concrete type)
+* Anything registered in the parent `LifetimeScope`
+
+`[Inject]` methods of the components on the screen's GameObject and its children are also called.
+The Presenter is disposed together with the child scope when the screen is destroyed.
+
+`ILifecycleHandler` has the following events. All of them have default implementations.
+
+| Method | Timing |
+|---|---|
+| `InitializeAsync` | Right after the screen is loaded |
+| `WillPushEnterAsync` / `DidPushEnter` | Before / after the push-enter animation |
+| `WillPushExitAsync` / `DidPushExit` | Before / after the push-exit animation |
+| `WillPopEnterAsync` / `DidPopEnter` | Before / after the pop-enter animation |
+| `WillPopExitAsync` / `DidPopExit` | Before / after the pop-exit animation |
+| `CleanupAsync` | Right before the screen is destroyed |
+
+#### Pass arguments to a screen
+To pass arguments, implement `IScreenWithArgs<TArgs>` and push it with `PushPageAsync<TPresenter, TArgs>()` or `PushModalAsync<TPresenter, TArgs>()`.
+The combination of the Presenter and the arguments is checked at compile time.
+
+```cs
+public sealed class UnitDetailModalArgs
+{
+    public UnitDetailModalArgs(int unitId) => UnitId = unitId;
+    public int UnitId { get; }
+}
+
+[AssetAddress("prefab_unit_detail_modal")]
+public sealed class UnitDetailModalPresenter : IPresenter, IScreenWithArgs<UnitDetailModalArgs>
+{
+    public UnitDetailModalPresenter(UnitDetailModal view, UnitDetailModalArgs args)
+    {
+        // ...
+    }
+
+    public void Dispose()
+    {
+    }
+}
+
+// Push with the arguments
+await screenNavigator.PushModalAsync<UnitDetailModalPresenter, UnitDetailModalArgs>(new UnitDetailModalArgs(1));
+```
+
+#### Receive a result from a screen
+Override `IPresenter.CompleteAsync()` to return a result, and wait for it with `IScreenNavigator.WaitForPopAsync<TResult>()`.
+`CompleteAsync()` is called when the screen has been popped.
+
+```cs
+[AssetAddress("prefab_confirm_modal")]
+public sealed class ConfirmModalPresenter : IPresenter
+{
+    private bool accepted;
+
+    // ...
+
+    // Called when the screen has been popped
+    public UniTask<object> CompleteAsync() => UniTask.FromResult<object>(accepted);
+
+    public void Dispose()
+    {
+    }
+}
+
+var presenter = await screenNavigator.PushModalAsync<ConfirmModalPresenter>();
+var accepted = await screenNavigator.WaitForPopAsync<bool>(presenter);
+```
+
+`WaitForPopAsync()` can be called only once for each Presenter.
+
+#### Show screens in front of modals with Overlay
+Overlay is a layer for screens that must be in front of all pages and modals, such as a connecting indicator or a network error dialog.
+It is managed as a stack in the same way as modals.
+
+To set it up, create a Canvas with a larger `Sort Order` than the Canvas for modals, and attach `ModalContainer` and `OverlayContainer` to the same GameObject.
+`OverlayContainer` is a marker to distinguish it from the normal `ModalContainer` in VContainer. The actual container is the `ModalContainer`.
+
+Then use `PushOverlayAsync()`/`PopOverlayAsync()`. You can create the Prefab and the Presenter in the same way as modals.
+
+```cs
+var connecting = await screenNavigator.PushOverlayAsync<ConnectingPresenter>();
+await SendRequestAsync();
+await screenNavigator.PopOverlayAsync(connecting);
+```
+
+#### Pop all screens at once
+`ClearAsync()` pops all overlays, modals, and pages in this order and empties the history.
+This is useful for cleaning up before a scene transition when `IScreenNavigator` is shared across scenes.
+
+```cs
+await screenNavigator.ClearAsync(pageContainer, modalContainer, overlayContainer);
+```
+
+#### Switch scenes
+`ISceneNavigator` switches scenes. `SceneNavigator` keeps the current scene (e.g. a bootstrap scene) and replaces only the content scene by additive loading.
+It loads the new scene first and then unloads the previous one, so there is no moment when neither scene is displayed.
+
+`SceneNavigator` uses `ISceneLoader` of [Supplement](https://github.com/chinpanGX/Supplement).
+
+```cs
+using Supplement.Loader.Abstractions;
+using Supplement.Loader.AddressablesLoader;
+
+builder.Register<AddressablesAssetLoader>(Lifetime.Singleton).As<ISceneLoader>();
+builder.Register<ISceneNavigator, SceneNavigator>(Lifetime.Singleton);
+```
+
+```cs
+await sceneNavigator.ChangeSceneAsync("scene_home");
+```
 
 ## Other Features
 

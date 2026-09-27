@@ -31,6 +31,11 @@
             "name": "com.unity.addressables",
             "expression": "1.17.4",
             "define": "ADDRESSABLES_1_17_4_OR_NEWER"
+        },
+        {
+            "name": "com.cysharp.unitask",
+            "expression": "",
+            "define": "USN_USE_ASYNC_METHODS"
         }
     ],
     "noEngineReferences": false

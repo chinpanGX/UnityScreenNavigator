@@ -780,9 +780,9 @@ PlayerSettings:
   webEnableSubmoduleStrippingCompatibility: 0
   webProgressiveAssetLoading: 0
   scriptingDefineSymbols:
-    Android: USN_USE_ASYNC_METHODS
-    Standalone: USN_USE_ASYNC_METHODS
-    iPhone: USN_USE_ASYNC_METHODS
+    Android: 
+    Standalone: 
+    iPhone: 
   additionalCompilerArguments: {}
   platformArchitecture: {}
   scriptingBackend:

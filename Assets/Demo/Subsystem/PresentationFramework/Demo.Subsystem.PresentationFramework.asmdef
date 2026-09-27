@@ -13,6 +13,12 @@
     "precompiledReferences": [],
     "autoReferenced": false,
     "defineConstraints": [],
-    "versionDefines": [],
+    "versionDefines": [
+        {
+            "name": "com.cysharp.unitask",
+            "expression": "",
+            "define": "USN_USE_ASYNC_METHODS"
+        }
+    ],
     "noEngineReferences": false
 }

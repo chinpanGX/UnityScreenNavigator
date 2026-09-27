@@ -10,6 +10,8 @@ UnityのuGUIで画面遷移、画面遷移アニメーション、遷移履歴�
   <img width="80%" src="https://user-images.githubusercontent.com/47441314/137313323-b2f24a0c-1ee3-4df0-a175-05fba32d9af3.gif" alt="Demo">
 </p>
 
+このリポジトリは[Haruma-K/UnityScreenNavigator](https://github.com/Haruma-K/UnityScreenNavigator)のフォークです。違いは[元の実装との違い](#%E5%85%83%E3%81%AE%E5%AE%9F%E8%A3%85%E3%81%A8%E3%81%AE%E9%81%95%E3%81%84)を参照してください。
+
 ## 目次
 
 <!-- START doctoc generated TOC please keep comment here to allow auto update -->
@@ -21,6 +23,9 @@ UnityのuGUIで画面遷移、画面遷移アニメーション、遷移履歴�
 - [概要](#%E6%A6%82%E8%A6%81)
     - [特徴](#%E7%89%B9%E5%BE%B4)
     - [デモ](#%E3%83%87%E3%83%A2)
+- [元の実装との違い](#%E5%85%83%E3%81%AE%E5%AE%9F%E8%A3%85%E3%81%A8%E3%81%AE%E9%81%95%E3%81%84)
+    - [変更点](#%E5%A4%89%E6%9B%B4%E7%82%B9)
+    - [追加機能](#%E8%BF%BD%E5%8A%A0%E6%A9%9F%E8%83%BD)
 - [セットアップ](#%E3%82%BB%E3%83%83%E3%83%88%E3%82%A2%E3%83%83%E3%83%97)
     - [要件](#%E8%A6%81%E4%BB%B6)
     - [インストール](#%E3%82%A4%E3%83%B3%E3%82%B9%E3%83%88%E3%83%BC%E3%83%AB)
@@ -49,6 +54,15 @@ UnityのuGUIで画面遷移、画面遷移アニメーション、遷移履歴�
     - [Addressableアセットシステムを使って読み込む](#addressable%E3%82%A2%E3%82%BB%E3%83%83%E3%83%88%E3%82%B7%E3%82%B9%E3%83%86%E3%83%A0%E3%82%92%E4%BD%BF%E3%81%A3%E3%81%A6%E8%AA%AD%E3%81%BF%E8%BE%BC%E3%82%80)
     - [同期的にロードする](#%E5%90%8C%E6%9C%9F%E7%9A%84%E3%81%AB%E3%83%AD%E3%83%BC%E3%83%89%E3%81%99%E3%82%8B)
     - [プリロードする](#%E3%83%97%E3%83%AA%E3%83%AD%E3%83%BC%E3%83%89%E3%81%99%E3%82%8B)
+- [Presenter起点の画面遷移](#presenter%E8%B5%B7%E7%82%B9%E3%81%AE%E7%94%BB%E9%9D%A2%E9%81%B7%E7%A7%BB)
+    - [Presenter起点の画面遷移の概要](#presenter%E8%B5%B7%E7%82%B9%E3%81%AE%E7%94%BB%E9%9D%A2%E9%81%B7%E7%A7%BB%E3%81%AE%E6%A6%82%E8%A6%81)
+    - [VContainerに登録する](#vcontainer%E3%81%AB%E7%99%BB%E9%8C%B2%E3%81%99%E3%82%8B)
+    - [Presenterを作成して遷移する](#presenter%E3%82%92%E4%BD%9C%E6%88%90%E3%81%97%E3%81%A6%E9%81%B7%E7%A7%BB%E3%81%99%E3%82%8B)
+    - [画面に引数を渡す](#%E7%94%BB%E9%9D%A2%E3%81%AB%E5%BC%95%E6%95%B0%E3%82%92%E6%B8%A1%E3%81%99)
+    - [画面から結果を受け取る](#%E7%94%BB%E9%9D%A2%E3%81%8B%E3%82%89%E7%B5%90%E6%9E%9C%E3%82%92%E5%8F%97%E3%81%91%E5%8F%96%E3%82%8B)
+    - [Overlayでモーダルより前面に画面を出す](#overlay%E3%81%A7%E3%83%A2%E3%83%BC%E3%83%80%E3%83%AB%E3%82%88%E3%82%8A%E5%89%8D%E9%9D%A2%E3%81%AB%E7%94%BB%E9%9D%A2%E3%82%92%E5%87%BA%E3%81%99)
+    - [すべての画面をまとめて閉じる](#%E3%81%99%E3%81%B9%E3%81%A6%E3%81%AE%E7%94%BB%E9%9D%A2%E3%82%92%E3%81%BE%E3%81%A8%E3%82%81%E3%81%A6%E9%96%89%E3%81%98%E3%82%8B)
+    - [シーンを切り替える](#%E3%82%B7%E3%83%BC%E3%83%B3%E3%82%92%E5%88%87%E3%82%8A%E6%9B%BF%E3%81%88%E3%82%8B)
 - [その他の機能](#%E3%81%9D%E3%81%AE%E4%BB%96%E3%81%AE%E6%A9%9F%E8%83%BD)
     - [まとめて戻る](#%E3%81%BE%E3%81%A8%E3%82%81%E3%81%A6%E6%88%BB%E3%82%8B)
     - [ページを履歴にスタッキングしない](#%E3%83%9A%E3%83%BC%E3%82%B8%E3%82%92%E5%B1%A5%E6%AD%B4%E3%81%AB%E3%82%B9%E3%82%BF%E3%83%83%E3%82%AD%E3%83%B3%E3%82%B0%E3%81%97%E3%81%AA%E3%81%84)
@@ -91,17 +105,48 @@ UnityのuGUIで画面遷移、画面遷移アニメーション、遷移履歴�
 
 * [ジュエルセイバーFREE](http://www.jewel-s.jp/)
 
+## 元の実装との違い
+このリポジトリは[Haruma-K/UnityScreenNavigator](https://github.com/Haruma-K/UnityScreenNavigator)(1.8.0ベース)のフォークです。
+元の実装との違いは以下の通りです。このフォークで変更・追加した節には、冒頭に注記を入れています。
+
+#### 変更点
+
+| 項目 | 元の実装 | このフォーク |
+|---|---|---|
+| 非同期のライフサイクルイベント | `System.Threading.Tasks.Task`、デフォルトで無効(`Scripting Define Symbols`に`USN_USE_ASYNC_METHODS`を手動で追加) | `Cysharp.Threading.Tasks.UniTask`、デフォルトで有効(`USN_USE_ASYNC_METHODS`は自動で定義)。[コルーチンの代わりに非同期メソッドを使う](#%E3%82%B3%E3%83%AB%E3%83%BC%E3%83%81%E3%83%B3%E3%81%AE%E4%BB%A3%E3%82%8F%E3%82%8A%E3%81%AB%E9%9D%9E%E5%90%8C%E6%9C%9F%E3%83%A1%E3%82%BD%E3%83%83%E3%83%89%E3%82%92%E4%BD%BF%E3%81%86)を参照 |
+| 依存パッケージ | なし | UniTask・VContainer・Supplementが必須。[要件](#%E8%A6%81%E4%BB%B6)を参照 |
+| アセンブリの`autoReferenced` | `true` | `false`(利用側のアセンブリ定義から`UnityScreenNavigator`を参照する) |
+| インストールURL | `https://github.com/Haruma-K/UnityScreenNavigator.git?path=/Assets/UnityScreenNavigator` | `https://github.com/chinpanGX/UnityScreenNavigator.git?path=/Assets/UnityScreenNavigator` |
+
+#### 追加機能
+`Runtime/ChinpanGX`以下に以下を追加しています。詳しくは[Presenter起点の画面遷移](#presenter%E8%B5%B7%E7%82%B9%E3%81%AE%E7%94%BB%E9%9D%A2%E9%81%B7%E7%A7%BB)を参照してください。
+
+| 機能 | 型 |
+|---|---|
+| VContainerを使ったPresenter起点のページ・モーダル遷移 | `IScreenNavigator`、`ScreenNavigator`、`IPresenter`、`ILifecycleHandler`、`IScreenWithArgs<TArgs>`、`AssetAddressAttribute` |
+| ページ・モーダルより前面に描画するOverlayレイヤー | `OverlayContainer`、`IScreenNavigator.PushOverlayAsync()` / `PopOverlayAsync()` |
+| すべての画面をまとめて閉じる | `ScreenNavigatorExtensions.ClearAsync()` |
+| シーン切り替え | `ISceneNavigator`、`SceneNavigator` |
+
+`PageContainer`・`ModalContainer`・`SheetContainer`など元のAPIはそのまま使えます。
+
 ## セットアップ
 
 #### 要件
 * Unity 6 (6000.0) 以上
 * uGUI (UIElementsには非対応)
 
+以下はこのフォークでのみ必要です。
+
+* [UniTask](https://github.com/Cysharp/UniTask)
+* [VContainer](https://github.com/hadashiA/VContainer)
+* [Supplement](https://github.com/chinpanGX/Supplement)
+
 #### インストール
 1. Window > Package ManagerからPackage Managerを開く
 2. 「+」ボタン > Add package from git URL
 3. 以下を入力してインストール
-   * https://github.com/Haruma-K/UnityScreenNavigator.git?path=/Assets/UnityScreenNavigator
+   * https://github.com/chinpanGX/UnityScreenNavigator.git?path=/Assets/UnityScreenNavigator
 
 <p align="center">
   <img width="60%" src="https://user-images.githubusercontent.com/47441314/118421190-97842b00-b6fb-11eb-9f94-4dc94e82367a.png">
@@ -112,14 +157,28 @@ UnityのuGUIで画面遷移、画面遷移アニメーション、遷移履歴�
 ```json
 {
     "dependencies": {
-        "com.harumak.unityscreennavigator": "https://github.com/Haruma-K/UnityScreenNavigator.git?path=/Assets/UnityScreenNavigator"
+        "com.harumak.unityscreennavigator": "https://github.com/chinpanGX/UnityScreenNavigator.git?path=/Assets/UnityScreenNavigator"
+    }
+}
+```
+
+> **このフォークで変更**: パッケージの依存関係にはGit URLを指定できないため、依存パッケージ(UniTask・VContainer・Supplement)は自動ではインストールされません。
+> このパッケージより先にインストールしてください。例えばPackages/manifest.jsonに以下を追記します。
+
+```json
+{
+    "dependencies": {
+        "com.chinpangx.supplement": "https://github.com/chinpanGX/Supplement.git?path=Assets/Supplement",
+        "com.cysharp.unitask": "https://github.com/Cysharp/UniTask.git?path=src/UniTask/Assets/Plugins/UniTask",
+        "jp.hadashikick.vcontainer": "https://github.com/hadashiA/VContainer.git?path=VContainer/Assets/VContainer",
+        "com.harumak.unityscreennavigator": "https://github.com/chinpanGX/UnityScreenNavigator.git?path=/Assets/UnityScreenNavigator"
     }
 }
 ```
 
 バージョンを指定したい場合には以下のように記述します。
 
-* https://github.com/Haruma-K/UnityScreenNavigator.git?path=/Assets/UnityScreenNavigator#1.0.0
+* https://github.com/chinpanGX/UnityScreenNavigator.git?path=/Assets/UnityScreenNavigator#1.0.0
 
 ## 基本的な画面遷移
 
@@ -706,28 +765,42 @@ public interface ISheetContainerCallbackReceiver
 `SheetContainer.AddCallbackReceiver()`を呼ばなくても初期化時に`SheetContainer`に登録されます。
 
 #### コルーチンの代わりに非同期メソッドを使う
+
+> **このフォークで変更**: 元の実装は`System.Threading.Tasks.Task`を使い、`Scripting Define Symbols`に`USN_USE_ASYNC_METHODS`を手動で追加する必要があります。
+> このフォークでは`UniTask`を使い、デフォルトで有効になっています。
+
 以下のように、コルーチンの代わりに非同期メソッドを使用してライフサイクルイベントを定義することもできます。
 
 ```cs
-using System.Threading.Tasks;
+using Cysharp.Threading.Tasks;
 using UnityScreenNavigator.Runtime.Core.Page;
 
 public class SomePage : Page
 {
     // 非同期メソッドを使ってライフサイクルイベントを定義する
-    public override async Task Initialize()
+    public override async UniTask Initialize()
     {
-        await Task.Delay(100);
+        await UniTask.Delay(100);
     }
 }
 ```
 
-非同期メソッドを使うには、以下の手順で`Scripting Define Symbols`を追加します。
+非同期メソッド(UniTask)はデフォルトで有効です。  
+`UnityScreenNavigator.asmdef`の`Version Defines`で、`com.cysharp.unitask`が導入されていれば`USN_USE_ASYNC_METHODS`が自動で定義されるため、
+`Scripting Define Symbols`に手動で追加する必要はありません。
 
-* Player Settings > Other Settingsを開く
-* Scripting Define Symbolsに`USN_USE_ASYNC_METHODS`を追加
+なお`Version Defines`で定義したシンボルはそのアセンブリ内でのみ有効です。  
+自前のコードで`#if USN_USE_ASYNC_METHODS`を使う場合は、そのアセンブリ定義にも同じ`Version Defines`を追加してください。
 
-`Scripting Define Symbols`は全てのプラットフォームに対して設定する必要がある点に注意してください。
+```json
+"versionDefines": [
+    {
+        "name": "com.cysharp.unitask",
+        "expression": "",
+        "define": "USN_USE_ASYNC_METHODS"
+    }
+]
+```
 
 ## 画面リソースのロード
 
@@ -825,6 +898,203 @@ container.ReleasePreloaded(pageName);
 
 具体的な使用例としては [DemoのHomePage](https://github.com/Haruma-K/UnityScreenNavigator/blob/master/Assets/Demo/Scripts/HomePage.cs) を参考にしてください。  
 `Home`ページの初期化時に`Shop`ページも同時に読み込み、破棄も同時に行っています。
+
+## Presenter起点の画面遷移
+
+> **このフォークで追加**: 元の実装にはない機能です。
+
+#### Presenter起点の画面遷移の概要
+`Page`/`Modal`コンポーネントではなく、Presenterクラスを起点に画面遷移を行うレイヤー(`Runtime/ChinpanGX`)です。
+
+* `IScreenNavigator`はPresenterの型を指定して画面をPushします。Pushのたびに VContainer の子スコープを作成し、そこからPresenterを解決します。
+* Presenterのコンストラクタには、画面のコンポーネント(ロードしたPrefabの`Page`/`Modal`の派生クラス)や引数がインジェクトされます。
+* `Page`/`Modal`のライフサイクルイベントはPresenterに橋渡しされるので、Presenterはページかモーダルかを意識する必要がありません。
+* ページとモーダルに加えて、常にモーダルより前面に描画される**Overlay**レイヤーを使えます。
+
+元の`PageContainer`/`ModalContainer`のAPIと併用できます。
+
+#### VContainerに登録する
+`LifetimeScope`で各コンテナと`ScreenNavigator`を登録します。
+
+```cs
+using UnityEngine;
+using UnityScreenNavigator;
+using UnityScreenNavigator.Runtime.Core.Modal;
+using UnityScreenNavigator.Runtime.Core.Page;
+using VContainer;
+using VContainer.Unity;
+
+public sealed class SomeLifetimeScope : LifetimeScope
+{
+    [SerializeField] private PageContainer pageContainer;
+    [SerializeField] private ModalContainer modalContainer;
+    [SerializeField] private OverlayContainer overlayContainer;
+
+    protected override void Configure(IContainerBuilder builder)
+    {
+        builder.RegisterComponent(pageContainer);
+        builder.RegisterComponent(modalContainer);
+        builder.RegisterComponent(overlayContainer);
+        builder.Register<IScreenNavigator, ScreenNavigator>(Lifetime.Singleton);
+    }
+}
+```
+
+`ScreenNavigator`には`OverlayContainer`が必要です。設定方法は[Overlayでモーダルより前面に画面を出す](#overlay%E3%81%A7%E3%83%A2%E3%83%BC%E3%83%80%E3%83%AB%E3%82%88%E3%82%8A%E5%89%8D%E9%9D%A2%E3%81%AB%E7%94%BB%E9%9D%A2%E3%82%92%E5%87%BA%E3%81%99)を参照してください。
+
+#### Presenterを作成して遷移する
+`IPresenter`を実装し、`AssetAddressAttribute`で画面Prefabのリソースキーを指定します。
+リソースキーはそのままコンテナに渡されるため、コンテナの`AssetLoader`で解決されます。
+
+```cs
+using Cysharp.Threading.Tasks;
+using UnityScreenNavigator;
+
+[AssetAddress("prefab_shop_page")]
+public sealed class ShopPagePresenter : IPresenter
+{
+    private readonly ShopPage view; // ロードしたPrefabのPage/Modalコンポーネント
+    private readonly IScreenNavigator screenNavigator;
+
+    public ShopPagePresenter(ShopPage view, IScreenNavigator screenNavigator)
+    {
+        this.view = view;
+        this.screenNavigator = screenNavigator;
+    }
+
+    // IPresenterはILifecycleHandlerを含む。必要なイベントだけ上書きすればよい
+    public async UniTask InitializeAsync()
+    {
+        await view.SetupAsync();
+        view.OnBackButtonClicked += () => screenNavigator.PopPageAsync(this).Forget();
+    }
+
+    public void Dispose()
+    {
+    }
+}
+```
+
+Presenterの型を指定してPushします。
+
+```cs
+var presenter = await screenNavigator.PushPageAsync<ShopPagePresenter>();
+```
+
+Presenterのコンストラクタでは以下を受け取れます。
+
+* ロードしたPrefabの`Page`/`Modal`コンポーネント(具象型で登録)
+* Push時に渡した引数(具象型で登録)
+* 親の`LifetimeScope`に登録されているもの
+
+画面のGameObjectとその子にあるコンポーネントの`[Inject]`メソッドも呼ばれます。
+Presenterは画面が破棄されるときに子スコープごとDisposeされます。
+
+`ILifecycleHandler`には以下のイベントがあります。すべて既定実装があります。
+
+| メソッド | タイミング |
+|---|---|
+| `InitializeAsync` | 画面がロードされた直後 |
+| `WillPushEnterAsync` / `DidPushEnter` | Push時の入場アニメーションの前 / 後 |
+| `WillPushExitAsync` / `DidPushExit` | Push時の退場アニメーションの前 / 後 |
+| `WillPopEnterAsync` / `DidPopEnter` | Pop時の入場アニメーションの前 / 後 |
+| `WillPopExitAsync` / `DidPopExit` | Pop時の退場アニメーションの前 / 後 |
+| `CleanupAsync` | 画面が破棄される直前 |
+
+#### 画面に引数を渡す
+引数を渡すには`IScreenWithArgs<TArgs>`を実装し、`PushPageAsync<TPresenter, TArgs>()`や`PushModalAsync<TPresenter, TArgs>()`でPushします。
+Presenterと引数の組み合わせはコンパイル時に検査されます。
+
+```cs
+public sealed class UnitDetailModalArgs
+{
+    public UnitDetailModalArgs(int unitId) => UnitId = unitId;
+    public int UnitId { get; }
+}
+
+[AssetAddress("prefab_unit_detail_modal")]
+public sealed class UnitDetailModalPresenter : IPresenter, IScreenWithArgs<UnitDetailModalArgs>
+{
+    public UnitDetailModalPresenter(UnitDetailModal view, UnitDetailModalArgs args)
+    {
+        // ...
+    }
+
+    public void Dispose()
+    {
+    }
+}
+
+// 引数を指定してPushする
+await screenNavigator.PushModalAsync<UnitDetailModalPresenter, UnitDetailModalArgs>(new UnitDetailModalArgs(1));
+```
+
+#### 画面から結果を受け取る
+`IPresenter.CompleteAsync()`を上書きして結果を返し、呼び出し側は`IScreenNavigator.WaitForPopAsync<TResult>()`で受け取ります。
+`CompleteAsync()`は画面のPopが完了した時点で呼ばれます。
+
+```cs
+[AssetAddress("prefab_confirm_modal")]
+public sealed class ConfirmModalPresenter : IPresenter
+{
+    private bool accepted;
+
+    // ...
+
+    // Popが完了した時点で呼ばれる
+    public UniTask<object> CompleteAsync() => UniTask.FromResult<object>(accepted);
+
+    public void Dispose()
+    {
+    }
+}
+
+var presenter = await screenNavigator.PushModalAsync<ConfirmModalPresenter>();
+var accepted = await screenNavigator.WaitForPopAsync<bool>(presenter);
+```
+
+`WaitForPopAsync()`は1つのPresenterにつき1回だけ呼べます。
+
+#### Overlayでモーダルより前面に画面を出す
+Overlayは、通信中インジケーターや通信エラーダイアログなど、すべてのページ・モーダルより前面に出す画面のためのレイヤーです。
+モーダルと同じくスタックで管理されます。
+
+モーダル用のCanvasより`Sort Order`が大きいCanvasを作り、同じGameObjectに`ModalContainer`と`OverlayContainer`をアタッチします。
+`OverlayContainer`はVContainer上で通常の`ModalContainer`と区別するためのマーカーで、実体は`ModalContainer`です。
+
+あとは`PushOverlayAsync()`/`PopOverlayAsync()`を使います。Prefab・Presenterはモーダルと同じ方法で作れます。
+
+```cs
+var connecting = await screenNavigator.PushOverlayAsync<ConnectingPresenter>();
+await SendRequestAsync();
+await screenNavigator.PopOverlayAsync(connecting);
+```
+
+#### すべての画面をまとめて閉じる
+`ClearAsync()`はOverlay・モーダル・ページの順にすべてPopし、履歴を空にします。
+`IScreenNavigator`をシーンをまたいで使い回す構成で、シーン遷移前の後始末に使います。
+
+```cs
+await screenNavigator.ClearAsync(pageContainer, modalContainer, overlayContainer);
+```
+
+#### シーンを切り替える
+`ISceneNavigator`はシーンを切り替えます。`SceneNavigator`は現在のシーン(Bootstrapシーンなど)を常駐させたまま、コンテンツシーンだけを加算ロードで差し替えます。
+新しいシーンを読み込んでから前のシーンをアンロードするため、どちらのシーンも表示されない瞬間はできません。
+
+`SceneNavigator`は[Supplement](https://github.com/chinpanGX/Supplement)の`ISceneLoader`を使います。
+
+```cs
+using Supplement.Loader.Abstractions;
+using Supplement.Loader.AddressablesLoader;
+
+builder.Register<AddressablesAssetLoader>(Lifetime.Singleton).As<ISceneLoader>();
+builder.Register<ISceneNavigator, SceneNavigator>(Lifetime.Singleton);
+```
+
+```cs
+await sceneNavigator.ChangeSceneAsync("scene_home");
+```
 
 ## その他の機能
 
