@@ -904,6 +904,7 @@ This layer (`Runtime/ChinpanGX`) drives screen transitions from a Presenter clas
 * The screen component (the `Page`/`Modal` subclass on the loaded Prefab) and the arguments are injected into the Presenter's constructor.
 * The lifecycle events of `Page`/`Modal` are forwarded to the Presenter, so the Presenter doesn't need to know whether it is a page or a modal.
 * In addition to pages and modals, an **Overlay** layer is available, which is always drawn in front of the modals.
+* Push/Pop calls are queued per container (page, modal, and overlay). Calling Push/Pop during a transition doesn't throw; it runs after the previous transition finishes.
 
 It can be used together with the original `PageContainer`/`ModalContainer` APIs.
 

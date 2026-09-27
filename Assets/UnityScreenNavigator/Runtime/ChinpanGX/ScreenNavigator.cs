@@ -14,6 +14,7 @@ namespace UnityScreenNavigator
     /// <summary>
     /// Presenter起点でPage/Modalを操作する<see cref="IScreenNavigator"/>の実装。
     /// Pushのたびにヘッドレスな子スコープを作ってPresenterを解決し、Presenterと画面IDの対応を管理する。
+    /// Push/Popはコンテナごとに直列化する(<see cref="TransitionQueue"/>)ため、前の遷移の途中で呼んでも順番待ちになる。
     /// </summary>
     public sealed class ScreenNavigator : IScreenNavigator, IDisposable
     {
@@ -30,6 +31,9 @@ namespace UnityScreenNavigator
         private readonly ModalContainer modalContainer;
         private readonly ModalContainer overlayContainer;
         private readonly IObjectResolver resolver;
+        private readonly TransitionQueue pageQueue;
+        private readonly TransitionQueue modalQueue;
+        private readonly TransitionQueue overlayQueue;
         private readonly Dictionary<IPresenter, Entry> entries = new();
 
         public ScreenNavigator(PageContainer pageContainer, ModalContainer modalContainer,
@@ -39,6 +43,9 @@ namespace UnityScreenNavigator
             this.modalContainer = modalContainer;
             this.overlayContainer = overlayContainer.Container;
             this.resolver = resolver;
+            pageQueue = new TransitionQueue(pageContainer);
+            modalQueue = new TransitionQueue(modalContainer);
+            overlayQueue = new TransitionQueue(this.overlayContainer);
         }
 
         public UniTask<TPresenter> PushPageAsync<TPresenter>(bool stack = true, bool playAnimation = true)
@@ -55,63 +62,67 @@ namespace UnityScreenNavigator
             return PushPageInternalAsync<TPresenter>(args, playAnimation, stack);
         }
 
-        public async UniTask PopPageAsync(bool playAnimation = true, int popCount = 1)
+        public UniTask PopPageAsync(bool playAnimation = true, int popCount = 1)
         {
-            await pageContainer.Pop(playAnimation, popCount).Task.AsUniTask();
+            return pageQueue.EnqueueAsync(() => pageContainer.Pop(playAnimation, popCount).Task.AsUniTask());
         }
 
-        public async UniTask PopPageAsync(IPresenter presenter, bool playAnimation = true)
+        public UniTask PopPageAsync(IPresenter presenter, bool playAnimation = true)
         {
             var entry = GetEntry(presenter);
-            var orderedIds = pageContainer.OrderedPagesIds;
-            var popCount = orderedIds.Count - IndexOf(orderedIds, entry.ScreenId);
-            await pageContainer.Pop(playAnimation, popCount).Task.AsUniTask();
+            // 順番待ちの間に上へ積まれた画面も一緒に閉じるよう、位置は順番が来た時点で数える
+            return pageQueue.EnqueueAsync(() =>
+            {
+                var orderedIds = pageContainer.OrderedPagesIds;
+                var popCount = orderedIds.Count - IndexOf(orderedIds, entry.ScreenId);
+                return pageContainer.Pop(playAnimation, popCount).Task.AsUniTask();
+            });
         }
 
         public UniTask<TPresenter> PushModalAsync<TPresenter>(bool playAnimation = true)
             where TPresenter : IPresenter
         {
-            return PushModalLikeInternalAsync<TPresenter>(modalContainer, null, playAnimation);
+            return PushModalLikeInternalAsync<TPresenter>(modalContainer, modalQueue, null, playAnimation);
         }
 
         public UniTask<TPresenter> PushModalAsync<TPresenter, TArgs>(TArgs args, bool playAnimation = true)
             where TPresenter : IPresenter, IScreenWithArgs<TArgs>
             where TArgs : class
         {
-            return PushModalLikeInternalAsync<TPresenter>(modalContainer, args, playAnimation);
+            return PushModalLikeInternalAsync<TPresenter>(modalContainer, modalQueue, args, playAnimation);
         }
 
         public UniTask PopModalAsync(bool playAnimation = true, int popCount = 1)
         {
-            return PopModalLikeAsync(modalContainer, playAnimation, popCount);
+            return PopModalLikeAsync(modalContainer, modalQueue, playAnimation, popCount);
         }
 
         public UniTask PopModalAsync(IPresenter presenter, bool playAnimation = true)
         {
-            return PopModalLikeAsync(modalContainer, presenter, playAnimation);
+            return PopModalLikeAsync(modalContainer, modalQueue, presenter, playAnimation);
         }
 
         public UniTask<TPresenter> PushOverlayAsync<TPresenter>(bool playAnimation = true)
             where TPresenter : IPresenter
         {
-            return PushModalLikeInternalAsync<TPresenter>(overlayContainer, null, playAnimation);
+            return PushModalLikeInternalAsync<TPresenter>(overlayContainer, overlayQueue, null, playAnimation);
         }
 
         public UniTask<TPresenter> PushOverlayAsync<TPresenter, TArgs>(TArgs args, bool playAnimation = true)
             where TPresenter : IPresenter, IScreenWithArgs<TArgs>
             where TArgs : class
         {
-            return PushModalLikeInternalAsync<TPresenter>(overlayContainer, args, playAnimation);
+            return PushModalLikeInternalAsync<TPresenter>(overlayContainer, overlayQueue, args, playAnimation);
         }
 
         public UniTask PopOverlayAsync(bool playAnimation = true, int popCount = 1)
         {
-            return PopModalLikeAsync(overlayContainer, playAnimation, popCount);
+            return PopModalLikeAsync(overlayContainer, overlayQueue, playAnimation, popCount);
         }
 
         public UniTask PopOverlayAsync(IPresenter presenter, bool playAnimation = true)
         {
-            return PopModalLikeAsync(overlayContainer, presenter, playAnimation);
+            return PopModalLikeAsync(overlayContainer, overlayQueue, presenter, playAnimation);
         }
 
         public async UniTask<TResult> WaitForPopAsync<TResult>(IPresenter presenter,
@@ -134,47 +145,59 @@ namespace UnityScreenNavigator
             entries.Clear();
         }
 
-        private async UniTask<TPresenter> PushPageInternalAsync<TPresenter>(object args, bool playAnimation,
+        private UniTask<TPresenter> PushPageInternalAsync<TPresenter>(object args, bool playAnimation,
             bool stack)
             where TPresenter : IPresenter
         {
             var resourceKey = GetResourceKey<TPresenter>();
-            TPresenter presenter = default;
-            var handle = pageContainer.Push(resourceKey, playAnimation, stack: stack, onLoad: loaded =>
+            return pageQueue.EnqueueAsync(async () =>
             {
-                presenter = CreateEntry<TPresenter>(args, loaded.page, loaded.pageId);
-                loaded.page.AddLifecycleEvent(new PageLifecycleAdapter(presenter, OnScreenCleanup));
+                TPresenter presenter = default;
+                var handle = pageContainer.Push(resourceKey, playAnimation, stack: stack, onLoad: loaded =>
+                {
+                    presenter = CreateEntry<TPresenter>(args, loaded.page, loaded.pageId);
+                    loaded.page.AddLifecycleEvent(new PageLifecycleAdapter(presenter, OnScreenCleanup));
+                });
+                await handle.Task.AsUniTask();
+                return presenter;
             });
-            await handle.Task.AsUniTask();
-            return presenter;
         }
 
-        private async UniTask<TPresenter> PushModalLikeInternalAsync<TPresenter>(ModalContainer container,
-            object args, bool playAnimation)
+        private UniTask<TPresenter> PushModalLikeInternalAsync<TPresenter>(ModalContainer container,
+            TransitionQueue queue, object args, bool playAnimation)
             where TPresenter : IPresenter
         {
             var resourceKey = GetResourceKey<TPresenter>();
-            TPresenter presenter = default;
-            var handle = container.Push(resourceKey, playAnimation, onLoad: loaded =>
+            return queue.EnqueueAsync(async () =>
             {
-                presenter = CreateEntry<TPresenter>(args, loaded.modal, loaded.modalId);
-                loaded.modal.AddLifecycleEvent(new ModalLifecycleAdapter(presenter, OnScreenCleanup));
+                TPresenter presenter = default;
+                var handle = container.Push(resourceKey, playAnimation, onLoad: loaded =>
+                {
+                    presenter = CreateEntry<TPresenter>(args, loaded.modal, loaded.modalId);
+                    loaded.modal.AddLifecycleEvent(new ModalLifecycleAdapter(presenter, OnScreenCleanup));
+                });
+                await handle.Task.AsUniTask();
+                return presenter;
             });
-            await handle.Task.AsUniTask();
-            return presenter;
         }
 
-        private static async UniTask PopModalLikeAsync(ModalContainer container, bool playAnimation, int popCount)
+        private static UniTask PopModalLikeAsync(ModalContainer container, TransitionQueue queue,
+            bool playAnimation, int popCount)
         {
-            await container.Pop(playAnimation, popCount).Task.AsUniTask();
+            return queue.EnqueueAsync(() => container.Pop(playAnimation, popCount).Task.AsUniTask());
         }
 
-        private async UniTask PopModalLikeAsync(ModalContainer container, IPresenter presenter, bool playAnimation)
+        private UniTask PopModalLikeAsync(ModalContainer container, TransitionQueue queue, IPresenter presenter,
+            bool playAnimation)
         {
             var entry = GetEntry(presenter);
-            var orderedIds = container.OrderedModalIds;
-            var popCount = orderedIds.Count - IndexOf(orderedIds, entry.ScreenId);
-            await container.Pop(playAnimation, popCount).Task.AsUniTask();
+            // 順番待ちの間に上へ積まれた画面も一緒に閉じるよう、位置は順番が来た時点で数える
+            return queue.EnqueueAsync(() =>
+            {
+                var orderedIds = container.OrderedModalIds;
+                var popCount = orderedIds.Count - IndexOf(orderedIds, entry.ScreenId);
+                return container.Pop(playAnimation, popCount).Task.AsUniTask();
+            });
         }
 
         private TPresenter CreateEntry<TPresenter>(object args, object view, string screenId)
@@ -185,7 +208,9 @@ namespace UnityScreenNavigator
                 if (args != null)
                     builder.RegisterInstance(args, args.GetType());
                 builder.RegisterInstance(view, view.GetType());
-                builder.Register<TPresenter>(Lifetime.Transient);
+                // VContainerはTransientのインスタンスをスコープ破棄時にDisposeしないため、Scopedで登録して
+                // 子スコープのDispose(Pop完了時・ScreenNavigator破棄時)でPresenterもDisposeされるようにする
+                builder.Register<TPresenter>(Lifetime.Scoped);
             });
 
             // ViewのGameObjectはUSN側のInstantiateで生成され、VContainerの通常のプレハブ生成経路

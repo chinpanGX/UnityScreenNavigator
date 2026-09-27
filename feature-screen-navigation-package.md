@@ -599,8 +599,13 @@ USNの拡張要望としてデフォルトでAddressablesLoaderを利用する�
    `PageLifecycleAdapter`/`ModalLifecycleAdapter`(5.1)を実装する~~ 実装済み
 2. ~~`Supplement.UnityScreenNavigator`側に`SceneNavigator`(4章)を実装する~~ 実装済み。
    `Supplement.Loader`(`com.chinpangx.supplement`)を依存に追加し、`ISceneLoader`をそのまま利用した
-3. Client側 `Atlas.Navigation`・`HomeLifetimeScope`/`BattleLifetimeScope` 等を`Supplement.UnityScreenNavigator`
-   に置き換える。Atlas側`manifest.json`に2章の2つのgit URLを登録する
+3. ~~Client側 `Atlas.Navigation`・`HomeLifetimeScope`/`BattleLifetimeScope` 等を`Supplement.UnityScreenNavigator`
+   に置き換える。Atlas側`manifest.json`に2章の2つのgit URLを登録する~~ 実装済み。パッケージはフォーク本体に
+   統合したため、`manifest.json`には`?path=/Assets/UnityScreenNavigator#develop`の1つだけを登録した。
+   あわせて、Atlasが持っていた遷移の直列化(`TransitionQueue`)をフォークの`ScreenNavigator`へ移した
+   (二重Popの防止・遷移完了を待つシーン切り替えはAtlas側で持つ)。また、PresenterをTransientで登録していたため
+   子スコープのDisposeでPresenterがDisposeされていなかった(VContainerはTransientをDisposeしない)不具合を、
+   Scoped登録に変えて修正した
 4. ~~`OverlayContainer`/`PushOverlayAsync`/`PopOverlayAsync`(3.6)を実装する~~ C#側は実装済み。
    Demoの`Overlay Canvas`配下にモーダル用GameObject(`ModalContainer`+`OverlayContainer`)を追加し、
    `DemoLifetimeScope`の`overlayContainer`フィールドに割り当てる作業が残っている(シーンの手動編集)

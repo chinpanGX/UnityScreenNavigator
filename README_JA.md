@@ -910,6 +910,7 @@ container.ReleasePreloaded(pageName);
 * Presenterのコンストラクタには、画面のコンポーネント(ロードしたPrefabの`Page`/`Modal`の派生クラス)や引数がインジェクトされます。
 * `Page`/`Modal`のライフサイクルイベントはPresenterに橋渡しされるので、Presenterはページかモーダルかを意識する必要がありません。
 * ページとモーダルに加えて、常にモーダルより前面に描画される**Overlay**レイヤーを使えます。
+* Push/Popはコンテナ(ページ・モーダル・Overlay)ごとに順番待ちになります。遷移中に別のPush/Popを呼んでも例外にならず、前の遷移が終わってから実行されます。
 
 元の`PageContainer`/`ModalContainer`のAPIと併用できます。
 
